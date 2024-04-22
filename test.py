@@ -32,12 +32,16 @@ robot_params = {
 sim_params = {"use_gui":True,
               'timestep':1/240,
               'control_type':'end',
-              'gripper_enable':True,
+              'gripper_enable':False,
               'is_train':True,
               'distance_threshold':0.05,}
 
 vis = sim_params['use_gui']
 pb = connect_pybullet(sim_params['timestep'], show_gui=vis)
+plane = pb.loadURDF(
+            "./assets/plane/plane.urdf",
+            [0, 0, 0],
+        )
 base_pos = [0, 0, 0]
 base_rpy = [0, 0, 0]
 base_orn = pb.getQuaternionFromEuler(base_rpy)
