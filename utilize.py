@@ -38,7 +38,7 @@ def connect_pybullet(timestep, show_gui=False):
         pb.configureDebugVisualizer(pb.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 0)
         # pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 0)
         # 不展示GUI的套件
-        pb.configureDebugVisualizer(pb.COV_ENABLE_GUI, 0)
+        # pb.configureDebugVisualizer(pb.COV_ENABLE_GUI, 0)
         # 禁用 tinyrenderer 
         # pb.configureDebugVisualizer(pb.COV_ENABLE_TINY_RENDERER, 0)
         # pb.configureDebugVisualizer(pb.COV_ENABLE_Y_AXIS_UP, 1)
