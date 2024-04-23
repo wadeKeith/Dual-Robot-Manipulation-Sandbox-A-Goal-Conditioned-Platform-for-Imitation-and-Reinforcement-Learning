@@ -13,7 +13,7 @@
   <!-- word-link virtual  -->
   <!-- <link  name="world"/> -->
   <joint name="desk_base_virtual_joint" type="fixed">
-    <origin rpy="0 0 0 " xyz="0 0 0.80"/>
+    <origin rpy="0 0 0 " xyz="0 0 0.725"/>
     <parent link="world"/>
     <child link="desk_base_link"/>
     <axis xyz="0 0 0"/>

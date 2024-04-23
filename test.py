@@ -42,10 +42,10 @@ plane = pb.loadURDF(
             "./assets/plane/plane.urdf",
             [0, 0, 0],
         )
-base_pos = [0, 0, -0.1]
+base_pos = [0, 0, -0.0075038]
 base_rpy = [0, 0, 0]
 base_orn = pb.getQuaternionFromEuler(base_rpy)
-asset_name = "./assets/urdf/dual_robot.urdf"
+asset_name = "./assets/urdf/test.urdf"
 dual_robot = pb.loadURDF(asset_name, base_pos, base_orn)
 
 
