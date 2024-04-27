@@ -32,8 +32,8 @@ class PickPlace_UR5Env(object):
             set_debug_camera(self._pb, visual_sensor_params)
         # Initialize the goal range
         self.blockUid = -1
-        self.goal_range_low = np.array([0.7, -0.3, 0.04])
-        self.goal_range_high = np.array([0.8, 0.3, 0.1])
+        self.goal_range_low = np.array([0.2, -0.3, 0.04+0.725])
+        self.goal_range_high = np.array([0.4, 0.3, 1])
         # rgb_obs_space = spaces.Box(low=0, high=255, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1], 4), dtype=np.uint8)
         # depth_obs_space = spaces.Box(low=0, high=1, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1]), dtype=np.float32)
         # seg_obs_space = spaces.Box(low=-1, high=255, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1]), dtype=np.int32)
@@ -56,8 +56,8 @@ class PickPlace_UR5Env(object):
             observation_bound_now = np.array([2, 2, 2])
             observation_bound = np.concatenate([observation_bound_now,observation_bound_now])
         observation_space = spaces.Box(-observation_bound, observation_bound, dtype=np.float32)
-        achieved_space = spaces.Box(np.array([0.7, -0.3, 0]), self.goal_range_high, dtype=np.float32)
-        desired_space = spaces.Box(np.array([0.7, -0.3, 0]), self.goal_range_high, dtype=np.float32)
+        achieved_space = spaces.Box(np.array([0.2, -0.3, 0]), self.goal_range_high, dtype=np.float32)
+        desired_space = spaces.Box(np.array([0.2, -0.3, 0]), self.goal_range_high, dtype=np.float32)
         # self.observation_space = spaces.Dict({
         #     'rgb': rgb_obs_space,
         #     'depth': depth_obs_space,
@@ -93,7 +93,7 @@ class PickPlace_UR5Env(object):
         self.achieved_goal_initial_ang = None
         
         self.arm_gripper.reset(self.gripper_enable)
-        # block: x in (0.6, 1), y in (-0.4, 0.4), z = 0.04
+        # block: x in (0.6, 1), y in (-0.4, 0.4), z = 0.04+0.725
         # target: x in (0.6, 1), y in (-0.4, 0.4), z in (0.04, 0.4)
         if self.is_train:
             initial_done = False
@@ -111,9 +111,9 @@ class PickPlace_UR5Env(object):
             self.goal = np.array([0.78,-0.15,0.1])
             self.goal_ang = 0
         if self.blockUid == -1:
-            self.blockUid = self._pb.loadURDF("./assets/urdfs/cube_small_pick.urdf", self.achieved_goal_initial,
+            self.blockUid = self._pb.loadURDF("./assets/urdf/cube_small_pick.urdf", self.achieved_goal_initial,
                                         self._pb.getQuaternionFromEuler([0,0,self.achieved_goal_initial_ang]))
-            self.targetUid = self._pb.loadURDF("./assets/urdfs/cube_small_target_pick.urdf",
+            self.targetUid = self._pb.loadURDF("./assets/urdf/cube_small_target_pick.urdf",
                                         self.goal,
                                         self._pb.getQuaternionFromEuler([0,0,self.goal_ang]), useFixedBase=1)
         else:
@@ -124,13 +124,13 @@ class PickPlace_UR5Env(object):
             self.targetUid = self._pb.loadURDF("./assets/urdfs/cube_small_target_pick.urdf",
                                         self.goal,
                                         self._pb.getQuaternionFromEuler([0,0,self.goal_ang]), useFixedBase=1)
-        self._pb.setCollisionFilterPair(self.targetUid, self.blockUid, -1, -1, 0)
-        robot_obs = self.arm_gripper.get_joint_obs(self.control_type,self.gripper_enable).copy()
-        # robot_obs = np.concatenate([robot_obs_old, robot_obs_new])
-        obs_dict = self._get_obs(robot_obs)
-        obs = self.dictobs2npobs(obs_dict, self.observation_space)
-        info = {"is_success": bool(self.is_success(obs_dict["achieved_goal"], obs_dict['desired_goal']))}
-        return (obs, info,obs_dict)
+        # self._pb.setCollisionFilterPair(self.targetUid, self.blockUid, -1, -1, 0)
+        # robot_obs = self.arm_gripper.get_joint_obs(self.control_type,self.gripper_enable).copy()
+        # # robot_obs = np.concatenate([robot_obs_old, robot_obs_new])
+        # obs_dict = self._get_obs(robot_obs)
+        # obs = self.dictobs2npobs(obs_dict, self.observation_space)
+        # info = {"is_success": bool(self.is_success(obs_dict["achieved_goal"], obs_dict['desired_goal']))}
+        # return (obs, info,obs_dict)
 
     def step(self, action) -> Tuple[Dict[str, np.ndarray], float, bool, bool, Dict[str, Any]]:
         """

@@ -1,6 +1,7 @@
 import numpy as np
 from utilize import connect_pybullet, set_debug_camera, Camera, distance
 import random
+from pick_place_env import PickPlace_UR5Env
 import numpy as np
 from tqdm import tqdm
 import torch
@@ -9,16 +10,21 @@ import math
 import pickle
 import time
 
-
-reset_arm_poses = [0, -math.pi/2, math.pi*4/9, -math.pi*4/9,
-                            -math.pi/2, 0]
+seed = 3407
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+reset_arm_poses = [0, -math.pi/2, -math.pi*4/9, -math.pi*5/9, -math.pi*3/4, 0, 
+                   -math.pi/2, -math.pi/2, math.pi*4/9, -math.pi*4/9, math.pi*3/4, 0]
 reset_gripper_range = [0, 0.085]
 visual_sensor_params = {
         'image_size': [128, 128],
-        'dist': 1.0,
+        'dist': 1.5,
         'yaw': 90.0,
         'pitch': -25.0,
-        'pos': [0.6, 0.0, 0.0525],
+        'pos': [0.5, 0.0, 1],
         'fov': 75.0,
         'near_val': 0.1,
         'far_val': 5.0,
@@ -32,23 +38,15 @@ robot_params = {
 sim_params = {"use_gui":True,
               'timestep':1/240,
               'control_type':'end',
-              'gripper_enable':False,
+              'gripper_enable':True,
               'is_train':True,
               'distance_threshold':0.05,}
 
-vis = sim_params['use_gui']
-pb = connect_pybullet(sim_params['timestep'], show_gui=vis)
-plane = pb.loadURDF(
-            "./assets/plane/plane.urdf",
-            [0, 0, 0],
-        )
-base_pos = [0, 0, -0.0075038]
-base_rpy = [0, 0, 0]
-base_orn = pb.getQuaternionFromEuler(base_rpy)
-asset_name = "./assets/urdf/dual_robot.urdf"
-dual_robot = pb.loadURDF(asset_name, base_pos, base_orn)
+env =  PickPlace_UR5Env(sim_params=sim_params,
+                        robot_params= robot_params,
+                        visual_sensor_params= visual_sensor_params)
 
-
+env.reset()
 while True:
-    pb.stepSimulation()
+    env.step_simulation()
     time.sleep(sim_params['timestep'])
