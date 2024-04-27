@@ -98,20 +98,10 @@
       </geometry>
     </collision>
   </link>
-  <link name="base_right_virtual_link">
-  </link>
-  <joint name="base_right_virtual_joint" type="fixed">
-    <origin rpy="3.14159265358979 0.785398163397448 1.5707963267949" xyz="0 -0.174748737341515 0.641109127034685"/>
+  <joint name="base_top_joint" type="fixed">
+    <origin rpy="0 0.25 0" xyz="0.0450000000000174 0 0.918859127034699"/>
     <parent link="body_base_link"/>
-    <child link="base_right_virtual_link"/>
-    <axis xyz="0 0 0"/>
-  </joint>
-  <link name="base_left_virtual_link">
-  </link>
-  <joint name="base_left_virtual_joint" type="fixed">
-    <origin rpy="-2.35619449019234 0 0" xyz="0 0.1747487373415 0.6411091270347"/>
-    <parent link="body_base_link"/>
-    <child link="base_left_virtual_link"/>
+    <child link="base_top_link"/>
     <axis xyz="0 0 0"/>
   </joint>
   <link name="base_top_link">
@@ -136,18 +126,10 @@
       </geometry>
     </collision>
   </link>
-  <joint name="base_top_joint" type="fixed">
-    <origin rpy="0 0.25 0" xyz="0.0450000000000174 0 0.918859127034699"/>
-    <parent link="body_base_link"/>
-    <child link="base_top_link"/>
-    <axis xyz="0 0 0"/>
-  </joint>
-  <link name="top_mid_virtual_link">
-  </link>
-  <joint name="top_mid_virtual_joint" type="fixed">
-    <origin rpy="-1.5707963267949 0.349065850398898 0" xyz="0.0831335832259699 0 -0.0902711429138859"/>
+  <joint name="top_camera_joint" type="fixed">
+    <origin rpy="-3.14159265358979 0.65 0" xyz="0.101149999999983 0 0.154750000000001"/>
     <parent link="base_top_link"/>
-    <child link="top_mid_virtual_link"/>
+    <child link="top_camera_link"/>
     <axis xyz="0 0 0"/>
   </joint>
   <link name="top_camera_link">
@@ -172,20 +154,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="top_camera_joint" type="fixed">
-    <origin rpy="-3.14159265358979 0.65 0" xyz="0.101149999999983 0 0.154750000000001"/>
-    <parent link="base_top_link"/>
-    <child link="top_camera_link"/>
-    <axis xyz="0 0 0"/>
-  </joint>
-  <link name="top_camera_virtual_link">
-  </link>
-  <joint name="top_camera_virtual_joint" type="fixed">
-    <origin rpy="3.14159265358979 0 0" xyz="0.0327999999999819 0 -0.0149999999999817"/>
-    <parent link="top_camera_link"/>
-    <child link="top_camera_virtual_link"/>
-    <axis xyz="0 0 0"/>
-  </joint>
+
   <material name="black">
     <color rgba="0.0 0.0 0.0 1.0"/>
   </material>
@@ -275,19 +244,10 @@
   </transmission>
 
   <joint name="left_fixed" type="fixed">
-    <parent link="base_left_virtual_link"/>
-    <child link="left_base_link"/>
-    <origin rpy="0 0 3.141592653" xyz="0 0 0"/>
-  </joint>
-
-  <link name="left_base_link"/>
-
-  <joint name="left_base_link-base_link_inertia" type="fixed">
-    <parent link="left_base_link"/>
+    <parent link="body_base_link"/>
     <child link="left_base_link_inertia"/>
-    <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
+    <origin rpy="-2.35619449019234 0 0" xyz="0 0.1747487373415 0.6411091270347"/>
   </joint>
-
   <link name="left_base_link_inertia">
     <visual>
       <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
@@ -882,20 +842,9 @@
   </transmission>
 
   <joint name="right_fixed" type="fixed">
-    <parent link="base_right_virtual_link"/>
-    <child link="right_base_link"/>
-    <origin rpy="0 0 1.57 " xyz="0 0 0"/>
-  </joint>
-  <link name="right_base_link"/>
-  <joint name="right_base_link-base_link_inertia" type="fixed">
-    <parent link="right_base_link"/>
+    <parent link="body_base_link"/>
     <child link="right_base_link_inertia"/>
-    <!-- 'base_link' is REP-103 aligned (so X+ forward), while the internal
-           frames of the robot/controller have X+ pointing backwards.
-           Use the joint between 'base_link' and 'base_link_inertia' (a dummy
-           link/frame) to introduce the necessary rotation over Z (of pi rad).
-      -->
-    <origin rpy="0 0 3.141592653589793" xyz="0 0 0"/>
+    <origin rpy="3.14159265358979 0.785398163397448 1.57 " xyz="0 -0.174748737341515 0.641109127034685"/>
   </joint>
   <link name="right_base_link_inertia">
     <visual>

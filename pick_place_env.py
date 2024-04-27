@@ -196,14 +196,9 @@ class PickPlace_UR5Env(object):
         Load a standard environment with a plane and a table.
         """
         self._pb.loadURDF(
-            "./assets/environment_objects/plane/plane.urdf",
-            [0, 0, -0.625],
+            "./assets/plane/plane.urdf",
+            [0, 0, 0],
         )
-        self._pb.loadURDF(
-            "./assets/environment_objects/table/table.urdf",
-            [0.50, 0.00, -0.625],
-            [0.0, 0.0, 0.0, 1.0], globalScaling=1,
-    )
 
     def _get_obs(self, robot_obs):
         achieved_goal,achieved_goal_orn = self.get_achieved_goal()

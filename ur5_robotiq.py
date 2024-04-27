@@ -11,15 +11,18 @@ class UR5Robotiq140:
         self.arm_num_dofs = 6
         self.action_scale = 0.2
         self.gripper_scale = 0.02
-        if "tcp_link_name" in robot_params:
-            self.tcp_link_name = robot_params["tcp_link_name"]
-        else:
-            self.tcp_link_name = "ee_link"
+        self.left_tcp_link_name = 'left_robotiq_arg2f_base_link'
+        self.right_tcp_link_name = 'right_robotiq_arg2f_base_link'
+        self.left_arm_left_finger_pad_name = 'left_arm_left_inner_finger_pad'
+        self.left_arm_right_finger_pad_name = 'left_arm_right_inner_finger_pad'
+        self.right_arm_left_finger_pad_name = 'right_arm_left_inner_finger_pad'
+        self.right_arm_right_finger_pad_name = 'right_arm_right_inner_finger_pad'
+        
+    
         self.arm_rest_poses = robot_params["reset_arm_poses"]  # default joint pose for ur5
         self.gripper_range = robot_params["reset_gripper_range"]
         self.load_urdf()
-        self.left_finger_pad_id = self.link_name_to_index['left_inner_finger_pad']
-        self.right_finger_pad_id = self.link_name_to_index['right_inner_finger_pad']
+        
         
         # set info specific to arm
         self.setup_ur5_info()
@@ -39,14 +42,19 @@ class UR5Robotiq140:
         self.base_pos = [0, 0, 0]
         self.base_rpy = [0, 0, 0]
         self.base_orn = self._pb.getQuaternionFromEuler(self.base_rpy)
-        asset_name = "./assets/urdfs/ur5_robotiq_140.urdf"
+        asset_name = "./assets/urdf/dual_robot.urdf"
         self.embodiment_id = self._pb.loadURDF(asset_name, self.base_pos, self.base_orn, useFixedBase=True, flags=self._pb.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
 
         # create dicts for mapping link/joint names to corresponding indices
         self.num_joints, self.link_name_to_index, self.joint_name_to_index = self.create_link_joint_mappings(self.embodiment_id)
 
         # get the link and tcp IDs
-        self.tcp_link_id = self.link_name_to_index[self.tcp_link_name]
+        self.left_tcp_link_id = self.link_name_to_index[self.left_tcp_link_name]
+        self.right_tcp_link_id = self.link_name_to_index[self.right_tcp_link_name]
+        self.left_arm_left_finger_pad_id = self.link_name_to_index[self.left_arm_left_finger_pad_name]
+        self.left_arm_right_finger_pad_id = self.link_name_to_index[self.left_arm_right_finger_pad_name]
+        self.right_arm_left_finger_pad_id = self.link_name_to_index[self.right_arm_left_finger_pad_name]
+        self.right_arm_right_finger_pad_id = self.link_name_to_index[self.right_arm_right_finger_pad_name]
 
     def create_link_joint_mappings(self, urdf_id):
 
@@ -131,10 +139,6 @@ class UR5Robotiq140:
         """
         Set some of the parameters used when controlling the UR5
         """
-        self.name = 'sim_ur5'
-        self.max_force = 1000.0
-        self.pos_gain = 1.0
-        self.vel_gain = 1.0
 
         jointInfo = namedtuple('jointInfo', 
             ['id','name','type','damping','friction','lowerLimit','upperLimit','maxForce','maxVelocity','controllable'])
@@ -154,7 +158,7 @@ class UR5Robotiq140:
             controllable = (jointType != self._pb.JOINT_FIXED)
             if controllable:
                 self.control_joint_ids.append(jointID)
-                self._pb.setJointMotorControl2(self.embodiment_id, jointID, self._pb.VELOCITY_CONTROL, targetVelocity=0, force=0)
+                # self._pb.setJointMotorControl2(self.embodiment_id, jointID, self._pb.VELOCITY_CONTROL, targetVelocity=0, force=0)
             info = jointInfo(jointID,jointName,jointType,jointDamping,jointFriction,jointLowerLimit,
                             jointUpperLimit,jointMaxForce,jointMaxVelocity,controllable)
             self.joints.append(info)
