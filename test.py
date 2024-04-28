@@ -17,7 +17,7 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 reset_arm_poses = [0, -math.pi/2, -math.pi*4/9, -math.pi*5/9, -math.pi*3/4, 0, 
-                   -math.pi/2, -math.pi/2, math.pi*4/9, -math.pi*4/9, math.pi*3/4, 0]
+                   math.pi, -math.pi/2, math.pi*4/9, -math.pi*4/9, math.pi*3/4, 0]
 reset_gripper_range = [0, 0.085]
 visual_sensor_params = {
         'image_size': [128, 128],
