@@ -76,7 +76,7 @@ class PickPlace_UR5Env(object):
         self.action_space = spaces.Box(low=-1, high=1, shape=(n_action,),dtype=np.float32)
         self.time = None
         self.time_limitation = 200
-        self.n_sub_step = 50
+        self.n_sub_step = 60
 
         
 
