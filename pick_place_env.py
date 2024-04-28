@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Tuple
 import time
-from ur5_robotiq import UR5Robotiq140
+from ur5_robotiq import UR5Robotiq85
 from utilize import connect_pybullet, set_debug_camera, Camera, distance
 from gymnasium import spaces
 import numpy as np
@@ -20,7 +20,7 @@ class PickPlace_UR5Env(object):
         self.load_standard_environment()
 
         # initialize a robot arm and gripper
-        self.arm_gripper = UR5Robotiq140(
+        self.arm_gripper = UR5Robotiq85(
             self._pb,
             robot_params=robot_params,
             use_gui = self.vis,
@@ -33,7 +33,7 @@ class PickPlace_UR5Env(object):
         # Initialize the goal range
         self.blockUid = -1
         self.goal_range_low = np.array([0.2, -0.3, 0.04+0.725])
-        self.goal_range_high = np.array([0.4, 0.3, 1])
+        self.goal_range_high = np.array([0.4, 0.3, 0.04+0.725])
         # rgb_obs_space = spaces.Box(low=0, high=255, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1], 4), dtype=np.uint8)
         # depth_obs_space = spaces.Box(low=0, high=1, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1]), dtype=np.float32)
         # seg_obs_space = spaces.Box(low=-1, high=255, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1]), dtype=np.int32)
@@ -119,9 +119,9 @@ class PickPlace_UR5Env(object):
         else:
             self._pb.removeBody(self.blockUid)
             self._pb.removeBody(self.targetUid)
-            self.blockUid = self._pb.loadURDF("./assets/urdfs/cube_small_pick.urdf", self.achieved_goal_initial,
+            self.blockUid = self._pb.loadURDF("./assets/urdf/cube_small_pick.urdf", self.achieved_goal_initial,
                                         self._pb.getQuaternionFromEuler([0,0,self.achieved_goal_initial_ang]))
-            self.targetUid = self._pb.loadURDF("./assets/urdfs/cube_small_target_pick.urdf",
+            self.targetUid = self._pb.loadURDF("./assets/urdf/cube_small_target_pick.urdf",
                                         self.goal,
                                         self._pb.getQuaternionFromEuler([0,0,self.goal_ang]), useFixedBase=1)
         self._pb.setCollisionFilterPair(self.targetUid, self.blockUid, -1, -1, 0)
@@ -143,8 +143,8 @@ class PickPlace_UR5Env(object):
         # robot_obs_old = self.arm_gripper.get_joint_obs(self.control_type,self.gripper_enable).copy() 
         assert self.control_type in ('joint', 'end')
         if self.gripper_enable:
-            self.arm_gripper.move_ee(action[:-1], self.control_type)
-            self.arm_gripper.move_gripper(action[-1])
+            self.arm_gripper.move_ee(action[:-2], self.control_type)
+            self.arm_gripper.move_gripper(action[-2:])
         else:
             self.arm_gripper.move_ee(action, self.control_type)
         self.step_simulation()
@@ -221,7 +221,7 @@ class PickPlace_UR5Env(object):
     def get_achieved_goal(self) -> np.ndarray:
         achieved_goal_pos,achieved_goal_orn_qua = self._pb.getBasePositionAndOrientation(self.blockUid)
         achieved_goal_orn = self._pb.getEulerFromQuaternion(achieved_goal_orn_qua)
-        # self._pb.addUserDebugPoints(pointPositions = [achieved_goal_finger_pos], pointColorsRGB = [[0, 0, 255]], pointSize= 20, lifeTime= 0)
+        # self._pb.addUserDebugPoints(pointPositions = [achieved_goal_pos], pointColorsRGB = [[0, 0, 255]], pointSize= 20, lifeTime= 0)
         return np.array(achieved_goal_pos), np.array(achieved_goal_orn)
     def _sample_goal(self) -> np.ndarray:
         """Sample a goal."""

@@ -4,7 +4,7 @@ from collections import namedtuple
 import math
 import os
 
-class UR5Robotiq140:
+class UR5Robotiq85:
     def __init__(self, pb, robot_params, use_gui):
         self.vis = use_gui
         self._pb = pb
@@ -80,32 +80,43 @@ class UR5Robotiq140:
         open_angle = 0.715 - math.asin((self.gripper_range[1] - 0.010) / 0.1143)  # angle calculation
         if gripper_enable:
             self._pb.resetJointState(self.embodiment_id, self.left_mimic_parent_id, open_angle, 0)
-            self._pb.resetJointState(self.embodiment_id, self.right_mimic_parent_id, open_angle, 0)
+            self._pb.resetJointState(self.embodiment_id, self.right_mimic_parent_id, open_angle, 0)  # angle calculation, 0)
         else:
             self._pb.setJointMotorControl2(self.embodiment_id, self.left_mimic_parent_id, self._pb.POSITION_CONTROL, targetPosition=open_angle,
                                 force=self.joints[self.left_mimic_parent_id].maxForce, maxVelocity=self.joints[self.left_mimic_parent_id].maxVelocity)
             self._pb.setJointMotorControl2(self.embodiment_id, self.right_mimic_parent_id, self._pb.POSITION_CONTROL, targetPosition=open_angle,
                                 force=self.joints[self.right_mimic_parent_id].maxForce, maxVelocity=self.joints[self.right_mimic_parent_id].maxVelocity)
+        # self._pb.addUserDebugPoints(pointPositions = [np.array([0.13879233598709106, -0.5902966856956482, 0.9793558716773987])], pointColorsRGB = [[0, 0, 255]], pointSize= 40, lifeTime= 0)
+        # pos, _, _, _ = self._pb.getJointState(self.embodiment_id, self.right_mimic_parent_id)
+        # print(pos)
         
         
         
-    def open_gripper(self):
-        current_gripper_open_length = math.sin(0.715-self._pb.getJointState(self.embodiment_id, self.mimic_parent_id)[0])*0.1143 + 0.010
-        action = (self.gripper_range[1] - current_gripper_open_length) / self.gripper_scale
-        self.move_gripper(action)
+    # def open_gripper(self):
+    #     current_gripper_open_length = math.sin(0.715-self._pb.getJointState(self.embodiment_id, self.mimic_parent_id)[0])*0.1143 + 0.010
+    #     action = (self.gripper_range[1] - current_gripper_open_length) / self.gripper_scale
+    #     self.move_gripper(action)
 
-    def close_gripper(self):
-        current_gripper_open_length = math.sin(0.715-self._pb.getJointState(self.embodiment_id, self.mimic_parent_id)[0])*0.1143 + 0.010
-        action = (self.gripper_range[0] - current_gripper_open_length) / self.gripper_scale
-        self.move_gripper(action)
+    # def close_gripper(self):
+    #     current_gripper_open_length = math.sin(0.715-self._pb.getJointState(self.embodiment_id, self.mimic_parent_id)[0])*0.1143 + 0.010
+    #     action = (self.gripper_range[0] - current_gripper_open_length) / self.gripper_scale
+    #     self.move_gripper(action)
 
     def move_gripper(self, action):
-        current_gripper_open_length = math.sin(0.715-self._pb.getJointState(self.embodiment_id, self.mimic_parent_id)[0])*0.1143 + 0.010
-        target_gripper_open_length = np.clip(current_gripper_open_length + action * self.gripper_scale, *self.gripper_range)
-        open_angle = 0.715 - math.asin((target_gripper_open_length - 0.010) / 0.1143)  # angle calculation
+        left_current_gripper_open_length = math.sin(0.715-self._pb.getJointState(self.embodiment_id, self.left_mimic_parent_id)[0])*0.1143 + 0.010
+        right_current_gripper_open_length = math.sin(0.715-self._pb.getJointState(self.embodiment_id, self.right_mimic_parent_id)[0])*0.1143 + 0.010
+        left_target_gripper_open_length = np.clip(left_current_gripper_open_length + action[0] * self.gripper_scale, *self.gripper_range)
+        right_target_gripper_open_length = np.clip(right_current_gripper_open_length + action[1] * self.gripper_scale, *self.gripper_range)
+        left_open_angle = 0.715 - math.asin((left_target_gripper_open_length - 0.010) / 0.1143)  # angle calculation
+        right_open_angle = 0.715 - math.asin((right_target_gripper_open_length - 0.010) / 0.1143)  # angle calculation
         # Control the mimic gripper joint(s)
-        self._pb.setJointMotorControl2(self.embodiment_id, self.mimic_parent_id, self._pb.POSITION_CONTROL, targetPosition=open_angle,
-                                force=self.joints[self.mimic_parent_id].maxForce, maxVelocity=self.joints[self.mimic_parent_id].maxVelocity)
+        self._pb.setJointMotorControl2(self.embodiment_id, self.right_mimic_parent_id, self._pb.POSITION_CONTROL, targetPosition=right_open_angle,
+                                force=self.joints[self.right_mimic_parent_id].maxForce, maxVelocity=self.joints[self.right_mimic_parent_id].maxVelocity)
+        self._pb.setJointMotorControl2(self.embodiment_id, self.left_mimic_parent_id, self._pb.POSITION_CONTROL, targetPosition=left_open_angle,
+                                force=self.joints[self.left_mimic_parent_id].maxForce, maxVelocity=self.joints[self.left_mimic_parent_id].maxVelocity)
+        # pos, _, _, _ = self._pb.getJointState(self.embodiment_id, self.right_mimic_parent_id)
+        # print(pos)
+        
     def move_ee(self, action, control_method):
         '''
         Move the end effector of the robot
@@ -114,20 +125,33 @@ class UR5Robotiq140:
         assert control_method in ('joint', 'end')
         if control_method == 'end':
             ee_displacement = action * self.action_scale  # limit maximum change in position
-            ee_position =np.array(self._pb.getLinkState(self.embodiment_id, self.tcp_link_id)[4])
-            # self._pb.addUserDebugPoints(pointPositions = [ee_position], pointColorsRGB = [[0, 0, 255]], pointSize= 40, lifeTime= 0)
-            target_ee_position = ee_position + ee_displacement
+            left_ee_position =np.array(self._pb.getLinkState(self.embodiment_id, self.left_tcp_link_id)[4])
+            right_ee_position =np.array(self._pb.getLinkState(self.embodiment_id, self.right_tcp_link_id)[4])
+            # self._pb.addUserDebugPoints(pointPositions = [left_ee_position], pointColorsRGB = [[0, 0, 255]], pointSize= 40, lifeTime= 0)
+            left_target_ee_position = left_ee_position + ee_displacement[:3]
+            right_target_ee_position = right_ee_position + ee_displacement[3:]
             # Clip the height target. For some reason, it has a great impact on learning
-            target_ee_position[2] = np.max((0, target_ee_position[2]))
-            joint_poses =np.array(self._pb.calculateInverseKinematics(self.embodiment_id, self.tcp_link_id, 
-                                                                      target_ee_position,
+            left_target_ee_position[2] = np.max((0, left_target_ee_position[2]))
+            right_target_ee_position[2] = np.max((0, right_target_ee_position[2]))
+            left_arm_joint_poses =np.array(self._pb.calculateInverseKinematics(self.embodiment_id, self.left_tcp_link_id, 
+                                                                      left_target_ee_position,
                                                                     #   targetOrientation = self._pb.getQuaternionFromEuler([0, math.pi/2, 0]),
-                                                                      lowerLimits = self.arm_lower_limits, 
-                                                                      upperLimits = self.arm_upper_limits, 
-                                                                      jointRanges = self.arm_joint_ranges,
+                                                                      lowerLimits = self.arm_lower_limits[:6], 
+                                                                      upperLimits = self.arm_upper_limits[:6], 
+                                                                      jointRanges = self.arm_joint_ranges[:6],
                                                                     #   solver = 1,
                                                                       maxNumIterations=200))
-            joint_poses = joint_poses[:self.arm_num_dofs]
+            right_arm_joint_poses =np.array(self._pb.calculateInverseKinematics(self.embodiment_id, self.right_tcp_link_id, 
+                                                                      right_target_ee_position,
+                                                                    #   targetOrientation = self._pb.getQuaternionFromEuler([0, math.pi/2, 0]),
+                                                                      lowerLimits = self.arm_lower_limits[6:], 
+                                                                      upperLimits = self.arm_upper_limits[6:], 
+                                                                      jointRanges = self.arm_joint_ranges[6:],
+                                                                    #   solver = 1,
+                                                                      maxNumIterations=200))
+            left_joint_poses = left_arm_joint_poses[:self.arm_num_dofs]
+            right_joint_poses = right_arm_joint_poses[12:12+self.arm_num_dofs]
+            joint_poses = np.concatenate([left_joint_poses, right_joint_poses])
             # self._pb.addUserDebugPoints(pointPositions = [target_ee_position], pointColorsRGB = [[0, 0, 255]], pointSize= 40, lifeTime= 0)
         elif control_method == 'joint':
             assert len(action) == self.arm_num_dofs
@@ -193,27 +217,47 @@ class UR5Robotiq140:
                                 'right_arm_right_inner_knuckle_joint': 1,
                                 'right_arm_left_inner_finger_joint': -1,
                                 'right_arm_right_inner_finger_joint': -1}
-        self.left_mimic_parent_id = [joint.id for joint in self.joints if joint.name == left_mimic_parent_name][0]
-        self.right_mimic_parent_id = [joint.id for joint in self.joints if joint.name == right_mimic_parent_name][0]
-        self.left_mimic_child_multiplier = {joint.id: left_mimic_children_names[joint.name] for joint in self.joints if joint.name in left_mimic_children_names}
-        self.right_mimic_child_multiplier = {joint.id: right_mimic_children_names[joint.name] for joint in self.joints if joint.name in right_mimic_children_names}
+        # c = self._pb.createConstraint(self.embodiment_id, 17, self.embodiment_id, 15, self._pb.JOINT_POINT2POINT, [0, 0, 0], [0, -0.014, 0.043], [0, -0.034, 0.021])
+        # self._pb.changeConstraint(c, erp=0.1, maxForce=1000)
+        # c = self._pb.createConstraint(self.embodiment_id, 22, self.embodiment_id, 20, self._pb.JOINT_POINT2POINT, [0, 0, 0], [0, -0.014, 0.043], [0, -0.034, 0.021])
+        # self._pb.changeConstraint(c, erp=0.1, maxForce=1000)
 
-        for joint_id, multiplier in self.left_mimic_child_multiplier.items():
-            c = self._pb.createConstraint(self.embodiment_id, self.left_mimic_parent_id,
-                                   self.embodiment_id, joint_id,
-                                   jointType=self._pb.JOINT_GEAR,
-                                   jointAxis=[0, 1, 0],
-                                   parentFramePosition=[0, 0, 0],
-                                   childFramePosition=[0, 0, 0])
-            self._pb.changeConstraint(c, gearRatio=-multiplier, maxForce=100, erp=1)  # Note: the mysterious `erp` is of EXTREME importance
-        for joint_id, multiplier in self.right_mimic_child_multiplier.items():
-            c = self._pb.createConstraint(self.embodiment_id, self.right_mimic_parent_id,
-                                   self.embodiment_id, joint_id,
-                                   jointType=self._pb.JOINT_GEAR,
-                                   jointAxis=[0, 1, 0],
-                                   parentFramePosition=[0, 0, 0],
-                                   childFramePosition=[0, 0, 0])
-            self._pb.changeConstraint(c, gearRatio=-multiplier, maxForce=100, erp=1)  # Note: the mysterious `erp` is of EXTREME importance
+        c = self._pb.createConstraint(self.embodiment_id, 35, self.embodiment_id, 33, self._pb.JOINT_POINT2POINT, [0, 0, 0], [0, -0.014, 0.043], [0, -0.034, 0.021])
+        self._pb.changeConstraint(c, erp=0.1, maxForce=1000)
+        c = self._pb.createConstraint(self.embodiment_id, 40, self.embodiment_id, 38, self._pb.JOINT_POINT2POINT, [0, 0, 0], [0, -0.014, 0.043], [0, -0.034, 0.021])
+        self._pb.changeConstraint(c, erp=0.1, maxForce=1000)
+        self.__setup_mimic_joints__(right_mimic_parent_name, right_mimic_children_names, 'right')
+        self.__setup_mimic_joints__(left_mimic_parent_name, left_mimic_children_names,'left')
+        
+        
+        
+
+        
+        
+    def __setup_mimic_joints__(self, mimic_parent_name, mimic_children_names, gripper_direction):
+        if gripper_direction == 'left':
+            self.left_mimic_parent_id = [joint.id for joint in self.joints if joint.name == mimic_parent_name][0]
+            self.left_mimic_child_multiplier = {joint.id: mimic_children_names[joint.name] for joint in self.joints if joint.name in mimic_children_names}
+            for joint_id, multiplier in self.left_mimic_child_multiplier.items():
+                c = self._pb.createConstraint(self.embodiment_id, self.left_mimic_parent_id,
+                                    self.embodiment_id, joint_id,
+                                    jointType=self._pb.JOINT_GEAR,
+                                    jointAxis=[0, 1, 0],
+                                    parentFramePosition=[0, 0, 0],
+                                    childFramePosition=[0, 0, 0])
+                self._pb.changeConstraint(c, gearRatio=-multiplier, maxForce=100, erp=1)  # Note: the mysterious `erp` is of EXTREME importance
+        elif gripper_direction == 'right':
+            self.right_mimic_parent_id = [joint.id for joint in self.joints if joint.name == mimic_parent_name][0]
+            self.right_mimic_child_multiplier = {joint.id: mimic_children_names[joint.name] for joint in self.joints if joint.name in mimic_children_names}
+            for joint_id, multiplier in self.right_mimic_child_multiplier.items():
+                c = self._pb.createConstraint(self.embodiment_id, self.right_mimic_parent_id,
+                                    self.embodiment_id, joint_id,
+                                    jointType=self._pb.JOINT_GEAR,
+                                    jointAxis=[0, 1, 0],
+                                    parentFramePosition=[0, 0, 0],
+                                    childFramePosition=[0, 0, 0])
+                self._pb.changeConstraint(c, gearRatio=-multiplier, maxForce=100, erp=1)  # Note: the mysterious `erp` is of EXTREME importance
+
 
     def step_simulation(self):
         raise RuntimeError('`step_simulation` method of RobotBase Class should be hooked by the environment.')
@@ -240,7 +284,7 @@ class UR5Robotiq140:
             left_arm_finger_angular_veocity = list((np.array(left_arm_left_finger_info[7])+np.array(left_arm_right_finger_info[7]))/2)
             right_arm_finger_angular_veocity = list((np.array(right_arm_left_finger_info[7])+np.array(right_arm_right_finger_info[7]))/2)
             arm_obs = left_arm_finger_pos+right_arm_finger_pos+left_ee_orn+right_ee_orn+left_arm_finger_linear_veocity+right_arm_finger_linear_veocity+left_arm_finger_angular_veocity+right_arm_finger_angular_veocity
-            # self._pb.addUserDebugPoints(pointPositions = [positions_arm], pointColorsRGB = [[0, 0, 255]], pointSize= 40, lifeTime= 0)
+            # self._pb.addUserDebugPoints(pointPositions = [(np.array(right_arm_left_finger_info[4])+np.array(right_arm_right_finger_info[4]))/2], pointColorsRGB = [[0, 0, 255]], pointSize= 40, lifeTime= 0)
             if gripper_enable:
                 left_positions_gripper = []
                 right_positions_gripper = []

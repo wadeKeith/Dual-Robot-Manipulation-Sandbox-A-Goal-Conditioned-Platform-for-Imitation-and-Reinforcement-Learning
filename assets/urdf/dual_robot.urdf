@@ -365,7 +365,7 @@
   <joint name="left_wrist_1_joint" type="revolute">
     <parent link="left_forearm_link"/>
     <child link="left_wrist_1_link"/>
-    <origin rpy="0 0 0" xyz="-0.3922 0 0.1333"/>
+    <origin rpy="0 0 -1.5707963267948966" xyz="-0.3922 0 0.1333"/>
     <axis xyz="0 0 1"/>
     <limit effort="28.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="3.141592653589793"/>
     <dynamics damping="0" friction="0"/>
@@ -547,7 +547,7 @@
     <child link="left_arm_left_inner_finger"/>
     <axis xyz="1 0 0"/>
     <limit effort="1000" lower="-0.8757" upper="0" velocity="2.0"/>
-    <mimic joint="finger_joint" multiplier="-1" offset="0"/>
+    <mimic joint="left_finger_joint" multiplier="-1" offset="0"/>
   </joint>
   <link name="left_arm_left_inner_finger">
     <inertial>
@@ -609,7 +609,7 @@
     <child link="left_arm_left_inner_knuckle"/>
     <axis xyz="1 0 0"/>
     <limit effort="1000" lower="0" upper="0.8757" velocity="2.0"/>
-    <mimic joint="finger_joint" multiplier="1" offset="0"/>
+    <mimic joint="left_finger_joint" multiplier="1" offset="0"/>
   </joint>
   <link name="left_arm_left_inner_knuckle">
     <inertial>
@@ -639,7 +639,7 @@
     <child link="left_arm_right_outer_knuckle"/>
     <axis xyz="1 0 0"/>
     <limit effort="1000" lower="0" upper="0.81" velocity="2.0"/>
-    <mimic joint="finger_joint" multiplier="1" offset="0"/>
+    <mimic joint="left_finger_joint" multiplier="1" offset="0"/>
   </joint>
   <link name="left_arm_right_outer_knuckle">
     <inertial>
@@ -697,7 +697,7 @@
     <child link="left_arm_right_inner_finger"/>
     <axis xyz="1 0 0"/>
     <limit effort="1000" lower="-0.8757" upper="0" velocity="2.0"/>
-    <mimic joint="finger_joint" multiplier="-1" offset="0"/>
+    <mimic joint="left_finger_joint" multiplier="-1" offset="0"/>
   </joint>
   <link name="left_arm_right_inner_finger">
     <inertial>
@@ -758,7 +758,7 @@
     <child link="left_arm_right_inner_knuckle"/>
     <axis xyz="1 0 0"/>
     <limit effort="1000" lower="0" upper="0.8757" velocity="2.0"/>
-    <mimic joint="finger_joint" multiplier="1" offset="0"/>
+    <mimic joint="left_finger_joint" multiplier="1" offset="0"/>
   </joint>
   <link name="left_arm_right_inner_knuckle">
     <inertial>
@@ -871,7 +871,7 @@
   <joint name="right_shoulder_pan_joint" type="revolute">
     <parent link="right_base_link_inertia"/>
     <child link="right_shoulder_link"/>
-    <origin rpy="0 0 0" xyz="0 0 0.1625"/>
+    <origin rpy="0 0 3.141592653589793" xyz="0 0 0.1625"/>
     <axis xyz="0 0 1"/>
     <limit effort="150.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="3.141592653589793"/>
     <dynamics damping="0" friction="0"/>
@@ -901,7 +901,7 @@
   <joint name="right_shoulder_lift_joint" type="revolute">
     <parent link="right_shoulder_link"/>
     <child link="right_upper_arm_link"/>
-    <origin rpy="1.570796327 0 0" xyz="0 0 0"/>
+    <origin rpy="1.570796327 3.141592653589793 0" xyz="0 0 0"/>
     <axis xyz="0 0 1"/>
     <limit effort="150.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="3.141592653589793"/>
     <dynamics damping="0" friction="0"/>
@@ -961,7 +961,7 @@
   <joint name="right_wrist_1_joint" type="revolute">
     <parent link="right_forearm_link"/>
     <child link="right_wrist_1_link"/>
-    <origin rpy="0 0 0" xyz="-0.3922 0 0.1333"/>
+    <origin rpy="0 0 -1.5707963267948966" xyz="-0.3922 0 0.1333"/>
     <axis xyz="0 0 1"/>
     <limit effort="28.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="3.141592653589793"/>
     <dynamics damping="0" friction="0"/>
@@ -1053,7 +1053,7 @@
   <joint name="right_ee_joint" type="fixed">
     <parent link="right_wrist_3_link"/>
     <child link="right_robotiq_arg2f_base_link"/>
-    <origin rpy="0 0 -1.5707963267948966" xyz="0 0 0"/>
+    <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
   </joint>
 
   <!--################################################
@@ -1144,7 +1144,7 @@
     <child link="right_arm_left_inner_finger"/>
     <axis xyz="1 0 0"/>
     <limit effort="1000" lower="-0.8757" upper="0" velocity="2.0"/>
-    <mimic joint="finger_joint" multiplier="-1" offset="0"/>
+    <mimic joint="right_finger_joint" multiplier="-1" offset="0"/>
   </joint>
   <link name="right_arm_left_inner_finger">
     <inertial>
@@ -1206,7 +1206,7 @@
     <child link="right_arm_left_inner_knuckle"/>
     <axis xyz="1 0 0"/>
     <limit effort="1000" lower="0" upper="0.8757" velocity="2.0"/>
-    <mimic joint="finger_joint" multiplier="1" offset="0"/>
+    <mimic joint="right_finger_joint" multiplier="1" offset="0"/>
   </joint>
   <link name="right_arm_left_inner_knuckle">
     <inertial>
@@ -1236,7 +1236,7 @@
     <child link="right_arm_right_outer_knuckle"/>
     <axis xyz="1 0 0"/>
     <limit effort="1000" lower="0" upper="0.81" velocity="2.0"/>
-    <mimic joint="finger_joint" multiplier="1" offset="0"/>
+    <mimic joint="right_finger_joint" multiplier="1" offset="0"/>
   </joint>
   <link name="right_arm_right_outer_knuckle">
     <inertial>
@@ -1294,7 +1294,7 @@
     <child link="right_arm_right_inner_finger"/>
     <axis xyz="1 0 0"/>
     <limit effort="1000" lower="-0.8757" upper="0" velocity="2.0"/>
-    <mimic joint="finger_joint" multiplier="-1" offset="0"/>
+    <mimic joint="right_finger_joint" multiplier="-1" offset="0"/>
   </joint>
   <link name="right_arm_right_inner_finger">
     <inertial>
@@ -1355,7 +1355,7 @@
     <child link="right_arm_right_inner_knuckle"/>
     <axis xyz="1 0 0"/>
     <limit effort="1000" lower="0" upper="0.8757" velocity="2.0"/>
-    <mimic joint="finger_joint" multiplier="1" offset="0"/>
+    <mimic joint="right_finger_joint" multiplier="1" offset="0"/>
   </joint>
   <link name="right_arm_right_inner_knuckle">
     <inertial>
