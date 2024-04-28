@@ -44,13 +44,13 @@ class PickPlace_UR5Env(object):
             observation_bound_now = np.ones(shape=(self.arm_gripper.arm_num_dofs,))*3.14159265359
             observation_bound = np.concatenate([observation_bound_now,observation_bound_now])
         elif self.control_type=='end' and self.gripper_enable:
-            observation_bound = np.concatenate([np.ones(shape=(3,))*2,
+            observation_bound = np.concatenate([np.ones(shape=(3,))*2,np.ones(shape=(3,))*2,
+                                                np.ones(shape=(3,))*3.14159265359, np.ones(shape=(3,))*3.14159265359,
+                                                np.ones(shape=(3,))*2, np.ones(shape=(3,))*2,
+                                                np.ones(shape=(3,))*3.2, np.ones(shape=(3,))*3.2,
+                                                np.ones(shape=(self.arm_gripper.num_control_dofs-self.arm_gripper.arm_num_dofs*self.arm_gripper.arm_num,))*3.14159265359,
                                                 np.ones(shape=(3,))*3.14159265359,
-                                                np.ones(shape=(3,))*2,
-                                                np.ones(shape=(3,))*3.2,
-                                                np.ones(shape=(self.arm_gripper.num_control_dofs-self.arm_gripper.arm_num_dofs,))*3.14159265359,
-                                                np.ones(shape=(3,))*3.14159265359,
-                                                np.ones(shape=(3,))*2])
+                                                np.ones(shape=(3,))*2,np.ones(shape=(3,))*2])
             # observation_bound = np.concatenate([observation_bound_now,observation_bound_now])
         else:
             observation_bound_now = np.array([2, 2, 2])
@@ -71,8 +71,8 @@ class PickPlace_UR5Env(object):
             'achieved_goal': achieved_space,
             'desired_goal': desired_space,
         })
-        n_action = 3 if self.control_type == "end" else 6  # control (x, y z) if "ee", else, control the 7 joints
-        n_action += 1 if self.gripper_enable else 0
+        n_action = 3*2 if self.control_type == "end" else 6*2  # control (x, y z) if "ee", else, control the 7 joints
+        n_action += 1*2 if self.gripper_enable else 0
         self.action_space = spaces.Box(low=-1, high=1, shape=(n_action,),dtype=np.float32)
         self.time = None
         self.time_limitation = 200
@@ -106,9 +106,9 @@ class PickPlace_UR5Env(object):
             self.goal = goal.copy()
             self.goal_ang = goal_ang
         else:
-            self.achieved_goal_initial = np.array([0.72,0.15,0.04])
+            self.achieved_goal_initial = np.array([0.3,0.15,0.04+0.725])
             self.achieved_goal_initial_ang = 0
-            self.goal = np.array([0.78,-0.15,0.1])
+            self.goal = np.array([0.35,-0.15,0.9])
             self.goal_ang = 0
         if self.blockUid == -1:
             self.blockUid = self._pb.loadURDF("./assets/urdf/cube_small_pick.urdf", self.achieved_goal_initial,
@@ -124,13 +124,13 @@ class PickPlace_UR5Env(object):
             self.targetUid = self._pb.loadURDF("./assets/urdfs/cube_small_target_pick.urdf",
                                         self.goal,
                                         self._pb.getQuaternionFromEuler([0,0,self.goal_ang]), useFixedBase=1)
-        # self._pb.setCollisionFilterPair(self.targetUid, self.blockUid, -1, -1, 0)
-        # robot_obs = self.arm_gripper.get_joint_obs(self.control_type,self.gripper_enable).copy()
-        # # robot_obs = np.concatenate([robot_obs_old, robot_obs_new])
-        # obs_dict = self._get_obs(robot_obs)
-        # obs = self.dictobs2npobs(obs_dict, self.observation_space)
-        # info = {"is_success": bool(self.is_success(obs_dict["achieved_goal"], obs_dict['desired_goal']))}
-        # return (obs, info,obs_dict)
+        self._pb.setCollisionFilterPair(self.targetUid, self.blockUid, -1, -1, 0)
+        robot_obs = self.arm_gripper.get_joint_obs(self.control_type,self.gripper_enable).copy()
+        # robot_obs = np.concatenate([robot_obs_old, robot_obs_new])
+        obs_dict = self._get_obs(robot_obs)
+        obs = self.dictobs2npobs(obs_dict, self.observation_space)
+        info = {"is_success": bool(self.is_success(obs_dict["achieved_goal"], obs_dict['desired_goal']))}
+        return (obs, info,obs_dict)
 
     def step(self, action) -> Tuple[Dict[str, np.ndarray], float, bool, bool, Dict[str, Any]]:
         """
@@ -203,8 +203,9 @@ class PickPlace_UR5Env(object):
     def _get_obs(self, robot_obs):
         achieved_goal,achieved_goal_orn = self.get_achieved_goal()
         desired_goal = self.goal.copy()
-        relative_pos = achieved_goal-robot_obs[:3].copy()
-        total_obs = np.concatenate([robot_obs.copy(),achieved_goal_orn.copy(),relative_pos.copy()])
+        left_arm_relative_pos = achieved_goal-robot_obs[:3].copy()
+        right_arm_relative_pos = achieved_goal-robot_obs[3:6].copy()
+        total_obs = np.concatenate([robot_obs.copy(),achieved_goal_orn.copy(),left_arm_relative_pos.copy(), right_arm_relative_pos.copy()])
         return {
             'observation': total_obs,
             'achieved_goal': achieved_goal,

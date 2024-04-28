@@ -227,20 +227,30 @@ class UR5Robotiq140:
                 positions.append(pos)
         else:
             # positions_arm = self._pb.getLinkState(self.embodiment_id, self.tcp_link_id)[4]
-            left_finger_info = self._pb.getLinkState(self.embodiment_id, self.left_finger_pad_id,computeLinkVelocity=1)
-            right_finger_info = self._pb.getLinkState(self.embodiment_id, self.right_finger_pad_id,computeLinkVelocity=1)
-            finger_pos = list((np.array(left_finger_info[4])+np.array(right_finger_info[4]))/2)
-            ee_orn = list(self._pb.getEulerFromQuaternion(np.array(self._pb.getLinkState(self.embodiment_id, self.tcp_link_id)[5])))
-            finger_linear_veocity = list((np.array(left_finger_info[6])+np.array(right_finger_info[6]))/2)
-            finger_angular_veocity = list((np.array(left_finger_info[7])+np.array(right_finger_info[7]))/2)
-            arm_obs = finger_pos+ee_orn+finger_linear_veocity+finger_angular_veocity
+            left_arm_left_finger_info = self._pb.getLinkState(self.embodiment_id, self.left_arm_left_finger_pad_id,computeLinkVelocity=1)
+            left_arm_right_finger_info = self._pb.getLinkState(self.embodiment_id, self.left_arm_right_finger_pad_id,computeLinkVelocity=1)
+            left_arm_finger_pos = list((np.array(left_arm_left_finger_info[4])+np.array(left_arm_right_finger_info[4]))/2)
+            right_arm_left_finger_info = self._pb.getLinkState(self.embodiment_id, self.right_arm_left_finger_pad_id,computeLinkVelocity=1)
+            right_arm_right_finger_info = self._pb.getLinkState(self.embodiment_id, self.right_arm_right_finger_pad_id,computeLinkVelocity=1)
+            right_arm_finger_pos = list((np.array(right_arm_left_finger_info[4])+np.array(right_arm_right_finger_info[4]))/2)
+            left_ee_orn = list(self._pb.getEulerFromQuaternion(np.array(self._pb.getLinkState(self.embodiment_id, self.left_tcp_link_id)[5])))
+            right_ee_orn = list(self._pb.getEulerFromQuaternion(np.array(self._pb.getLinkState(self.embodiment_id, self.right_tcp_link_id)[5])))
+            left_arm_finger_linear_veocity = list((np.array(left_arm_left_finger_info[6])+np.array(left_arm_right_finger_info[6]))/2)
+            right_arm_finger_linear_veocity = list((np.array(right_arm_left_finger_info[6])+np.array(right_arm_right_finger_info[6]))/2)
+            left_arm_finger_angular_veocity = list((np.array(left_arm_left_finger_info[7])+np.array(left_arm_right_finger_info[7]))/2)
+            right_arm_finger_angular_veocity = list((np.array(right_arm_left_finger_info[7])+np.array(right_arm_right_finger_info[7]))/2)
+            arm_obs = left_arm_finger_pos+right_arm_finger_pos+left_ee_orn+right_ee_orn+left_arm_finger_linear_veocity+right_arm_finger_linear_veocity+left_arm_finger_angular_veocity+right_arm_finger_angular_veocity
             # self._pb.addUserDebugPoints(pointPositions = [positions_arm], pointColorsRGB = [[0, 0, 255]], pointSize= 40, lifeTime= 0)
             if gripper_enable:
-                positions_gripper = []
-                for joint_id in self.control_joint_ids[self.arm_num_dofs:]:
+                left_positions_gripper = []
+                right_positions_gripper = []
+                for joint_id in self.control_joint_ids[self.arm_num_dofs:self.arm_num_dofs+6]:
                     pos, _, _, _ = self._pb.getJointState(self.embodiment_id, joint_id)
-                    positions_gripper.append(pos)
-                positions = arm_obs+positions_gripper
+                    left_positions_gripper.append(pos)
+                for joint_id in self.control_joint_ids[self.arm_num_dofs+12:]:
+                    pos, _, _, _ = self._pb.getJointState(self.embodiment_id, joint_id)
+                    right_positions_gripper.append(pos)
+                positions = arm_obs+left_positions_gripper+right_positions_gripper
             else:
                 positions = arm_obs
         robot_obs = np.array(positions)
