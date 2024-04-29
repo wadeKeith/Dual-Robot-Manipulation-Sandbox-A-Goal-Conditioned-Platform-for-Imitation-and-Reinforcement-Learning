@@ -18,8 +18,7 @@ torch.cuda.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 reset_arm_poses = [0, -math.pi/2, -math.pi*5/9, math.pi*4/9, math.pi*3/4, 0, 
                    0, math.pi/2, math.pi*5/9, -math.pi*4/9, -math.pi*3/4, 0]
-# reset_arm_poses = [0, 0, 0, 0, 0, 0, 
-#                     0, 0, 0, 0, 0, 0]
+
 reset_gripper_range = [0, 0.085]
 visual_sensor_params = {
         'image_size': [128, 128],
@@ -40,7 +39,6 @@ robot_params = {
 sim_params = {"use_gui":True,
               'timestep':1/240,
               'control_type':'end',
-              'gripper_enable':True,
               'is_train':True,
               'distance_threshold':0.05,}
 
@@ -49,9 +47,10 @@ env =  PickPlace_UR5Env(sim_params=sim_params,
                         visual_sensor_params= visual_sensor_params)
 
 obs, _,obs_dict = env.reset()
-# obs, reward, terminated, truncated, info,obs_dict = env.step(np.array([0,0,0,0,0,0,0,0]))
+obs, reward, terminated, truncated, info,obs_dict = env.step(np.array([0,0,0,0,0,0,0,0]))
 while True:
     # obs, _,obs_dict = env.reset()
-    obs, reward, terminated, truncated, info,obs_dict = env.step(np.array(env.read_debug_parameter()))
+    # obs, reward, terminated, truncated, info,obs_dict = env.step(np.array(env.read_debug_parameter()))
+    obs, reward, terminated, truncated, info,obs_dict = env.step(np.array([0,0,0,0,0,0,-1,-1]))
     # env.step_simulation()
     # time.sleep(sim_params['timestep'])

@@ -14,7 +14,6 @@ class PickPlace_UR5Env(object):
         self._pb = connect_pybullet(sim_params['timestep'], show_gui=self.vis)
         self.SIMULATION_STEP_DELAY = sim_params['timestep']
         self.control_type = sim_params['control_type']
-        self.gripper_enable = sim_params['gripper_enable']
         self.is_train = sim_params['is_train']
         self.distance_threshold = sim_params['distance_threshold']
         self.load_standard_environment()
@@ -37,13 +36,10 @@ class PickPlace_UR5Env(object):
         # rgb_obs_space = spaces.Box(low=0, high=255, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1], 4), dtype=np.uint8)
         # depth_obs_space = spaces.Box(low=0, high=1, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1]), dtype=np.float32)
         # seg_obs_space = spaces.Box(low=-1, high=255, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1]), dtype=np.int32)
-        if self.control_type=='joint' and self.gripper_enable:
+        if self.control_type=='joint':
             observation_bound_now = np.ones(shape=(self.arm_gripper.num_control_dofs,))*3.14159265359
             observation_bound = np.concatenate([observation_bound_now,observation_bound_now])
-        elif self.control_type=='joint' and self.gripper_enable==False:
-            observation_bound_now = np.ones(shape=(self.arm_gripper.arm_num_dofs,))*3.14159265359
-            observation_bound = np.concatenate([observation_bound_now,observation_bound_now])
-        elif self.control_type=='end' and self.gripper_enable:
+        elif self.control_type=='end':
             observation_bound = np.concatenate([np.ones(shape=(3,))*2,np.ones(shape=(3,))*2,
                                                 np.ones(shape=(3,))*3.14159265359, np.ones(shape=(3,))*3.14159265359,
                                                 np.ones(shape=(3,))*2, np.ones(shape=(3,))*2,
@@ -52,9 +48,6 @@ class PickPlace_UR5Env(object):
                                                 np.ones(shape=(3,))*3.14159265359,
                                                 np.ones(shape=(3,))*2,np.ones(shape=(3,))*2])
             # observation_bound = np.concatenate([observation_bound_now,observation_bound_now])
-        else:
-            observation_bound_now = np.array([2, 2, 2])
-            observation_bound = np.concatenate([observation_bound_now,observation_bound_now])
         observation_space = spaces.Box(-observation_bound, observation_bound, dtype=np.float32)
         achieved_space = spaces.Box(np.array([0.2, -0.3, 0]), self.goal_range_high, dtype=np.float32)
         desired_space = spaces.Box(np.array([0.2, -0.3, 0]), self.goal_range_high, dtype=np.float32)
@@ -71,35 +64,34 @@ class PickPlace_UR5Env(object):
             'achieved_goal': achieved_space,
             'desired_goal': desired_space,
         })
-        n_action = 3*2 if self.control_type == "end" else 6*2  # control (x, y z) if "ee", else, control the 7 joints
-        n_action += 1*2 if self.gripper_enable else 0
+        n_action = 4*2 if self.control_type == "end" else 7*2  # control (x, y z) if "ee", else, control the 7 joints
         self.action_space = spaces.Box(low=-1, high=1, shape=(n_action,),dtype=np.float32)
         self.time = None
-        self.time_limitation = 100
+        self.time_limitation = 200
         self.n_sub_step = 50
-        self.xin_left = self._pb.addUserDebugParameter("x_l", -1, 1, 0)
-        self.yin_left = self._pb.addUserDebugParameter("y_l", -1, 1, 0)
-        self.zin_left = self._pb.addUserDebugParameter("z_l", -1, 1, 0)
-        self.xin_right = self._pb.addUserDebugParameter("x_r", -1, 1, 0)
-        self.yin_right = self._pb.addUserDebugParameter("y_r", -1, 1, 0)
-        self.zin_right = self._pb.addUserDebugParameter("z_r", -1, 1, 0)
-        self.gripper_opening_length_contro_left = self._pb.addUserDebugParameter("gripper_l", -1, 1, 0)
-        self.gripper_opening_length_contro_right = self._pb.addUserDebugParameter("gripper_r", -1, 1, 0)
+    #     self.xin_left = self._pb.addUserDebugParameter("x_l", -1, 1, 0)
+    #     self.yin_left = self._pb.addUserDebugParameter("y_l", -1, 1, 0)
+    #     self.zin_left = self._pb.addUserDebugParameter("z_l", -1, 1, 0)
+    #     self.xin_right = self._pb.addUserDebugParameter("x_r", -1, 1, 0)
+    #     self.yin_right = self._pb.addUserDebugParameter("y_r", -1, 1, 0)
+    #     self.zin_right = self._pb.addUserDebugParameter("z_r", -1, 1, 0)
+    #     self.gripper_opening_length_contro_left = self._pb.addUserDebugParameter("gripper_l", -1, 1, 0)
+    #     self.gripper_opening_length_contro_right = self._pb.addUserDebugParameter("gripper_r", -1, 1, 0)
 
         
 
-    def read_debug_parameter(self):
-        # read the value of task parameter
-        x_l = self._pb.readUserDebugParameter(self.xin_left)
-        y_l = self._pb.readUserDebugParameter(self.yin_left)
-        z_l = self._pb.readUserDebugParameter(self.zin_left)
-        x_r = self._pb.readUserDebugParameter(self.xin_right)
-        y_r = self._pb.readUserDebugParameter(self.yin_right)
-        z_r = self._pb.readUserDebugParameter(self.zin_right)
-        gripper_opening_length_l = self._pb.readUserDebugParameter(self.gripper_opening_length_contro_left)
-        gripper_opening_length_r = self._pb.readUserDebugParameter(self.gripper_opening_length_contro_right)
+    # def read_debug_parameter(self):
+    #     # read the value of task parameter
+    #     x_l = self._pb.readUserDebugParameter(self.xin_left)
+    #     y_l = self._pb.readUserDebugParameter(self.yin_left)
+    #     z_l = self._pb.readUserDebugParameter(self.zin_left)
+    #     x_r = self._pb.readUserDebugParameter(self.xin_right)
+    #     y_r = self._pb.readUserDebugParameter(self.yin_right)
+    #     z_r = self._pb.readUserDebugParameter(self.zin_right)
+    #     gripper_opening_length_l = self._pb.readUserDebugParameter(self.gripper_opening_length_contro_left)
+    #     gripper_opening_length_r = self._pb.readUserDebugParameter(self.gripper_opening_length_contro_right)
 
-        return x_l, y_l, z_l, x_r, y_r, z_r, gripper_opening_length_l, gripper_opening_length_r
+    #     return x_l, y_l, z_l, x_r, y_r, z_r, gripper_opening_length_l, gripper_opening_length_r
 
     def reset(self,seed=None) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
         """
@@ -111,7 +103,7 @@ class PickPlace_UR5Env(object):
         self.achieved_goal_initial = None
         self.achieved_goal_initial_ang = None
         
-        self.arm_gripper.reset(self.gripper_enable)
+        self.arm_gripper.reset()
         # block: x in (0.6, 1), y in (-0.4, 0.4), z = 0.04+0.725
         # target: x in (0.6, 1), y in (-0.4, 0.4), z in (0.04, 0.4)
         if self.is_train:
@@ -144,7 +136,7 @@ class PickPlace_UR5Env(object):
                                         self.goal,
                                         self._pb.getQuaternionFromEuler([0,0,self.goal_ang]), useFixedBase=1)
         self._pb.setCollisionFilterPair(self.targetUid, self.blockUid, -1, -1, 0)
-        robot_obs = self.arm_gripper.get_joint_obs(self.control_type,self.gripper_enable).copy()
+        robot_obs = self.arm_gripper.get_joint_obs(self.control_type).copy()
         # robot_obs = np.concatenate([robot_obs_old, robot_obs_new])
         obs_dict = self._get_obs(robot_obs)
         obs = self.dictobs2npobs(obs_dict, self.observation_space)
@@ -159,15 +151,11 @@ class PickPlace_UR5Env(object):
                          'joint' for joint position control
         """
         self.time +=1
-        # robot_obs_old = self.arm_gripper.get_joint_obs(self.control_type,self.gripper_enable).copy() 
         assert self.control_type in ('joint', 'end')
-        if self.gripper_enable:
-            self.arm_gripper.move_ee(action[:-2], self.control_type)
-            self.arm_gripper.move_gripper(action[-2:])
-        else:
-            self.arm_gripper.move_ee(action, self.control_type)
+        self.arm_gripper.move_ee(action[:-2], self.control_type)
+        self.arm_gripper.move_gripper(action[-2:])
         self.step_simulation()
-        robot_obs = self.arm_gripper.get_joint_obs(self.control_type,self.gripper_enable).copy()
+        robot_obs = self.arm_gripper.get_joint_obs(self.control_type).copy()
         # robot_obs = np.concatenate([robot_obs_old, robot_obs_new])
         obs_dict = self._get_obs(robot_obs)
         obs = self.dictobs2npobs(obs_dict, self.observation_space)

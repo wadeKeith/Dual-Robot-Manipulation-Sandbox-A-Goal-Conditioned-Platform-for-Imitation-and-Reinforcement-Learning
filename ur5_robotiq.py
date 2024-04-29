@@ -72,41 +72,24 @@ class UR5Robotiq85:
             link_name_to_index[link_name] = i
 
         return num_joints, link_name_to_index, joint_name_to_index
-    def reset(self,gripper_enable):
+    def reset(self):
         for rest_pose, joint_id in zip(self.arm_rest_poses, self.arm_controllable_joints):
-            self._pb.resetJointState(self.embodiment_id, joint_id, rest_pose, 0)
             self._pb.changeDynamics(self.embodiment_id, joint_id, linearDamping=0.04, angularDamping=0.04)
             self._pb.changeDynamics(self.embodiment_id, joint_id, jointDamping=0.01)
+            self._pb.resetJointState(self.embodiment_id, joint_id, rest_pose, 0)
+        # self.step_simulation()
         open_angle = 0.715 - math.asin((self.gripper_range[1] - 0.010) / 0.1143)  # angle calculation
-        if gripper_enable:
-            self._pb.resetJointState(self.embodiment_id, self.left_mimic_parent_id, open_angle, 0)
-            self._pb.resetJointState(self.embodiment_id, self.right_mimic_parent_id, open_angle, 0)  # angle calculation, 0)
-        else:
-            self._pb.setJointMotorControl2(self.embodiment_id, self.left_mimic_parent_id, self._pb.POSITION_CONTROL, targetPosition=open_angle,
+        self._pb.setJointMotorControl2(self.embodiment_id, self.left_mimic_parent_id, self._pb.POSITION_CONTROL, targetPosition=open_angle,
                                 force=self.joints[self.left_mimic_parent_id].maxForce, maxVelocity=self.joints[self.left_mimic_parent_id].maxVelocity)
-            self._pb.setJointMotorControl2(self.embodiment_id, self.right_mimic_parent_id, self._pb.POSITION_CONTROL, targetPosition=open_angle,
-                                force=self.joints[self.right_mimic_parent_id].maxForce, maxVelocity=self.joints[self.right_mimic_parent_id].maxVelocity)
-        # self._pb.addUserDebugPoints(pointPositions = [np.array([0.13879233598709106, -0.5902966856956482, 0.9793558716773987])], pointColorsRGB = [[0, 0, 255]], pointSize= 40, lifeTime= 0)
-        # pos, _, _, _ = self._pb.getJointState(self.embodiment_id, self.right_mimic_parent_id)
-        # print(pos)
+        self._pb.setJointMotorControl2(self.embodiment_id, self.right_mimic_parent_id, self._pb.POSITION_CONTROL, targetPosition=open_angle,
+                            force=self.joints[self.right_mimic_parent_id].maxForce, maxVelocity=self.joints[self.right_mimic_parent_id].maxVelocity)
         
-        
-        
-    # def open_gripper(self):
-    #     current_gripper_open_length = math.sin(0.715-self._pb.getJointState(self.embodiment_id, self.mimic_parent_id)[0])*0.1143 + 0.010
-    #     action = (self.gripper_range[1] - current_gripper_open_length) / self.gripper_scale
-    #     self.move_gripper(action)
-
-    # def close_gripper(self):
-    #     current_gripper_open_length = math.sin(0.715-self._pb.getJointState(self.embodiment_id, self.mimic_parent_id)[0])*0.1143 + 0.010
-    #     action = (self.gripper_range[0] - current_gripper_open_length) / self.gripper_scale
-    #     self.move_gripper(action)
 
     def move_gripper(self, action):
         left_current_gripper_open_length = math.sin(0.715-self._pb.getJointState(self.embodiment_id, self.left_mimic_parent_id)[0])*0.1143 + 0.010
         right_current_gripper_open_length = math.sin(0.715-self._pb.getJointState(self.embodiment_id, self.right_mimic_parent_id)[0])*0.1143 + 0.010
-        left_target_gripper_open_length = np.clip(left_current_gripper_open_length + action[0] * self.gripper_scale, *self.gripper_range)
-        right_target_gripper_open_length = np.clip(right_current_gripper_open_length + action[1] * self.gripper_scale, *self.gripper_range)
+        left_target_gripper_open_length = np.clip(left_current_gripper_open_length + action[0] * self.gripper_scale, self.gripper_range[0], self.gripper_range[1])
+        right_target_gripper_open_length = np.clip(right_current_gripper_open_length + action[-1] * self.gripper_scale, self.gripper_range[0], self.gripper_range[1])
         left_open_angle = 0.715 - math.asin((left_target_gripper_open_length - 0.010) / 0.1143)  # angle calculation
         right_open_angle = 0.715 - math.asin((right_target_gripper_open_length - 0.010) / 0.1143)  # angle calculation
         # Control the mimic gripper joint(s)
@@ -169,7 +152,7 @@ class UR5Robotiq85:
         """
 
         jointInfo = namedtuple('jointInfo', 
-            ['id','name','type','damping','friction','lowerLimit','upperLimit','maxForce','maxVelocity','controllable'])
+            ['id','name','type','damping','friction','lowerLimit','upperLimit','maxForce','maxVelocity','controllable','linkname'])
         self.joints = []
         self.control_joint_ids = []
         for i in range(self._pb.getNumJoints(self.embodiment_id)):
@@ -183,12 +166,13 @@ class UR5Robotiq85:
             jointUpperLimit = info[9]
             jointMaxForce = info[10]
             jointMaxVelocity = info[11]
+            linkName = info[12].decode("utf-8")
             controllable = (jointType != self._pb.JOINT_FIXED)
             if controllable:
                 self.control_joint_ids.append(jointID)
-                # self._pb.setJointMotorControl2(self.embodiment_id, jointID, self._pb.VELOCITY_CONTROL, targetVelocity=0, force=0)
+                self._pb.setJointMotorControl2(self.embodiment_id, jointID, self._pb.VELOCITY_CONTROL, targetVelocity=0, force=0)
             info = jointInfo(jointID,jointName,jointType,jointDamping,jointFriction,jointLowerLimit,
-                            jointUpperLimit,jointMaxForce,jointMaxVelocity,controllable)
+                            jointUpperLimit,jointMaxForce,jointMaxVelocity,controllable,linkName)
             self.joints.append(info)
         self.control_joint_names = [self.joints[i].name for i in self.control_joint_ids]
 
@@ -205,58 +189,121 @@ class UR5Robotiq85:
         self.arm_joint_ranges = arm_joint_ranges_control[:self.arm_num_dofs]+arm_joint_ranges_control[self.arm_num_dofs+6:self.arm_num_dofs+12]
     
     def setup_gripper_info(self):
-        left_mimic_parent_name = 'left_finger_joint'
-        right_mimic_parent_name = 'right_finger_joint'
-        left_mimic_children_names = {'left_arm_right_outer_knuckle_joint': 1,
-                                'left_arm_left_inner_knuckle_joint': 1,
-                                'left_arm_right_inner_knuckle_joint': 1,
-                                'left_arm_left_inner_finger_joint': -1,
-                                'left_arm_right_inner_finger_joint': -1}
-        right_mimic_children_names = {'right_arm_right_outer_knuckle_joint': 1,
-                                'right_arm_left_inner_knuckle_joint': 1,
-                                'right_arm_right_inner_knuckle_joint': 1,
-                                'right_arm_left_inner_finger_joint': -1,
-                                'right_arm_right_inner_finger_joint': -1}
-        self.__setup_mimic_joints__(right_mimic_parent_name, right_mimic_children_names, 'right')
-        self.__setup_mimic_joints__(left_mimic_parent_name, left_mimic_children_names,'left')
+        self.left_mimic_parent_id = [joint.id for joint in self.joints if joint.name == 'left_finger_joint'][0]
+        self.right_mimic_parent_id = [joint.id for joint in self.joints if joint.name == 'right_finger_joint'][0]
+        self.__setup_mimic_joints__('right')
+        self.__setup_mimic_joints__('left')
         
         
-        
-
-        
-        
-    def __setup_mimic_joints__(self, mimic_parent_name, mimic_children_names, gripper_direction):
+    def __setup_mimic_joints__(self, gripper_direction):
+        erp = 1
         if gripper_direction == 'left':
-            self.left_mimic_parent_id = [joint.id for joint in self.joints if joint.name == mimic_parent_name][0]
-            self.left_mimic_child_multiplier = {joint.id: mimic_children_names[joint.name] for joint in self.joints if joint.name in mimic_children_names}
-            for joint_id, multiplier in self.left_mimic_child_multiplier.items():
-                c = self._pb.createConstraint(self.embodiment_id, self.left_mimic_parent_id,
-                                    self.embodiment_id, joint_id,
+            
+
+            right_outer_knuckle_id = [joint.id for joint in self.joints if joint.linkname == 'left_arm_right_outer_knuckle'][0]
+            c = self._pb.createConstraint(self.embodiment_id, self.left_mimic_parent_id,
+                                    self.embodiment_id, right_outer_knuckle_id,
                                     jointType=self._pb.JOINT_GEAR,
                                     jointAxis=[1, 0, 0],
                                     parentFramePosition=[0, 0, 0],
                                     childFramePosition=[0, 0, 0])
-                self._pb.changeConstraint(c, gearRatio=-multiplier, maxForce=1000, erp=1)  # Note: the mysterious `erp` is of EXTREME importance
+            self._pb.changeConstraint(c, gearRatio=-1, erp=erp)
+
+            left_inner_finger_id = [joint.id for joint in self.joints if joint.linkname == 'left_arm_left_inner_finger'][0]
+            c = self._pb.createConstraint(self.embodiment_id, self.left_mimic_parent_id,
+                                    self.embodiment_id, left_inner_finger_id,
+                                    jointType=self._pb.JOINT_GEAR,
+                                    jointAxis=[1, 0, 0],
+                                    parentFramePosition=[0, 0, 0],
+                                    childFramePosition=[0, 0, 0])
+            self._pb.changeConstraint(c, gearRatio=1, erp=erp)
+
+            left_inner_knuckle_id = [joint.id for joint in self.joints if joint.linkname == 'left_arm_left_inner_knuckle'][0]
+            c = self._pb.createConstraint(self.embodiment_id, self.left_mimic_parent_id,
+                                    self.embodiment_id, left_inner_knuckle_id,
+                                    jointType=self._pb.JOINT_GEAR,
+                                    jointAxis=[1, 0, 0],
+                                    parentFramePosition=[0, 0, 0],
+                                    childFramePosition=[0, 0, 0])
+            self._pb.changeConstraint(c, gearRatio=-1, erp=erp)
+
+
+            right_inner_finger_id = [joint.id for joint in self.joints if joint.linkname == 'left_arm_right_inner_finger'][0]
+            c = self._pb.createConstraint(self.embodiment_id, right_outer_knuckle_id,
+                                    self.embodiment_id, right_inner_finger_id,
+                                    jointType=self._pb.JOINT_GEAR,
+                                    jointAxis=[1, 0, 0],
+                                    parentFramePosition=[0, 0, 0],
+                                    childFramePosition=[0, 0, 0])
+            self._pb.changeConstraint(c, gearRatio=1, erp=erp)
+
+            right_inner_knuckle_id = [joint.id for joint in self.joints if joint.linkname == 'left_arm_right_inner_knuckle'][0]
+            c = self._pb.createConstraint(self.embodiment_id, right_outer_knuckle_id,
+                                    self.embodiment_id, right_inner_knuckle_id,
+                                    jointType=self._pb.JOINT_GEAR,
+                                    jointAxis=[1, 0, 0],
+                                    parentFramePosition=[0, 0, 0],
+                                    childFramePosition=[0, 0, 0])
+            self._pb.changeConstraint(c, gearRatio=-1, erp=erp)
+
         elif gripper_direction == 'right':
-            self.right_mimic_parent_id = [joint.id for joint in self.joints if joint.name == mimic_parent_name][0]
-            self.right_mimic_child_multiplier = {joint.id: mimic_children_names[joint.name] for joint in self.joints if joint.name in mimic_children_names}
-            for joint_id, multiplier in self.right_mimic_child_multiplier.items():
-                c = self._pb.createConstraint(self.embodiment_id, self.right_mimic_parent_id,
-                                    self.embodiment_id, joint_id,
+            
+
+            right_outer_knuckle_id = [joint.id for joint in self.joints if joint.linkname == 'right_arm_right_outer_knuckle'][0]
+            c = self._pb.createConstraint(self.embodiment_id, self.right_mimic_parent_id,
+                                    self.embodiment_id, right_outer_knuckle_id,
                                     jointType=self._pb.JOINT_GEAR,
                                     jointAxis=[1, 0, 0],
                                     parentFramePosition=[0, 0, 0],
                                     childFramePosition=[0, 0, 0])
-                self._pb.changeConstraint(c, gearRatio=-multiplier, maxForce=1000, erp=1)  # Note: the mysterious `erp` is of EXTREME importance
+            self._pb.changeConstraint(c, gearRatio=-1, erp=erp)
+
+            left_inner_finger_id = [joint.id for joint in self.joints if joint.linkname == 'right_arm_left_inner_finger'][0]
+            c = self._pb.createConstraint(self.embodiment_id, self.right_mimic_parent_id,
+                                    self.embodiment_id, left_inner_finger_id,
+                                    jointType=self._pb.JOINT_GEAR,
+                                    jointAxis=[1, 0, 0],
+                                    parentFramePosition=[0, 0, 0],
+                                    childFramePosition=[0, 0, 0])
+            self._pb.changeConstraint(c, gearRatio= 1, erp=erp)
+
+            left_inner_knuckle_id = [joint.id for joint in self.joints if joint.linkname == 'right_arm_left_inner_knuckle'][0]
+            c = self._pb.createConstraint(self.embodiment_id, self.right_mimic_parent_id,
+                                    self.embodiment_id, left_inner_knuckle_id,
+                                    jointType=self._pb.JOINT_GEAR,
+                                    jointAxis=[1, 0, 0],
+                                    parentFramePosition=[0, 0, 0],
+                                    childFramePosition=[0, 0, 0])
+            self._pb.changeConstraint(c, gearRatio=-1, erp=erp)
+
+
+            right_inner_finger_id = [joint.id for joint in self.joints if joint.linkname == 'right_arm_right_inner_finger'][0]
+            c = self._pb.createConstraint(self.embodiment_id, right_outer_knuckle_id,
+                                    self.embodiment_id, right_inner_finger_id,
+                                    jointType=self._pb.JOINT_GEAR,
+                                    jointAxis=[1, 0, 0],
+                                    parentFramePosition=[0, 0, 0],
+                                    childFramePosition=[0, 0, 0])
+            self._pb.changeConstraint(c, gearRatio=1, erp=erp)
+
+            right_inner_knuckle_id = [joint.id for joint in self.joints if joint.linkname == 'right_arm_right_inner_knuckle'][0]
+            c = self._pb.createConstraint(self.embodiment_id, right_outer_knuckle_id,
+                                    self.embodiment_id, right_inner_knuckle_id,
+                                    jointType=self._pb.JOINT_GEAR,
+                                    jointAxis=[1, 0, 0],
+                                    parentFramePosition=[0, 0, 0],
+                                    childFramePosition=[0, 0, 0])
+            self._pb.changeConstraint(c, gearRatio=-1, erp=erp)
+
 
 
     def step_simulation(self):
         raise RuntimeError('`step_simulation` method of RobotBase Class should be hooked by the environment.')
     
-    def get_joint_obs(self,control_type,gripper_enable) -> np.ndarray:
+    def get_joint_obs(self,control_type) -> np.ndarray:
         positions = []
         if control_type == 'joint':
-            control_joint_ls = self.control_joint_ids if gripper_enable else self.arm_controllable_joints
+            control_joint_ls = self.control_joint_ids
             for joint_id in control_joint_ls:
                 pos, _, _, _ = self._pb.getJointState(self.embodiment_id, joint_id)
                 positions.append(pos)
@@ -276,17 +323,16 @@ class UR5Robotiq85:
             right_arm_finger_angular_veocity = list((np.array(right_arm_left_finger_info[7])+np.array(right_arm_right_finger_info[7]))/2)
             arm_obs = left_arm_finger_pos+right_arm_finger_pos+left_ee_orn+right_ee_orn+left_arm_finger_linear_veocity+right_arm_finger_linear_veocity+left_arm_finger_angular_veocity+right_arm_finger_angular_veocity
             # self._pb.addUserDebugPoints(pointPositions = [(np.array(right_arm_left_finger_info[4])+np.array(right_arm_right_finger_info[4]))/2], pointColorsRGB = [[0, 0, 255]], pointSize= 40, lifeTime= 0)
-            if gripper_enable:
-                left_positions_gripper = []
-                right_positions_gripper = []
-                for joint_id in self.control_joint_ids[self.arm_num_dofs:self.arm_num_dofs+6]:
-                    pos, _, _, _ = self._pb.getJointState(self.embodiment_id, joint_id)
-                    left_positions_gripper.append(pos)
-                for joint_id in self.control_joint_ids[self.arm_num_dofs+12:]:
-                    pos, _, _, _ = self._pb.getJointState(self.embodiment_id, joint_id)
-                    right_positions_gripper.append(pos)
-                positions = arm_obs+left_positions_gripper+right_positions_gripper
-            else:
-                positions = arm_obs
+
+            left_positions_gripper = []
+            right_positions_gripper = []
+            for joint_id in self.control_joint_ids[self.arm_num_dofs:self.arm_num_dofs+6]:
+                pos, _, _, _ = self._pb.getJointState(self.embodiment_id, joint_id)
+                left_positions_gripper.append(pos)
+            for joint_id in self.control_joint_ids[self.arm_num_dofs+12:]:
+                pos, _, _, _ = self._pb.getJointState(self.embodiment_id, joint_id)
+                right_positions_gripper.append(pos)
+            positions = arm_obs+left_positions_gripper+right_positions_gripper
+
         robot_obs = np.array(positions)
         return robot_obs
