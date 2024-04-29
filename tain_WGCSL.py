@@ -54,13 +54,11 @@ robot_params = {
     "reset_gripper_range": reset_gripper_range,
 }
 # control type: joint, end
-sim_params = {"use_gui":True,
+sim_params = {"use_gui":False,
               'timestep':1/240,
               'control_type':'end',
-              'gripper_enable':True,
               'is_train':True,
               'distance_threshold':0.05,}
-# env_kwargs_dict = {"sim_params":sim_params, "robot_params": robot_params, "visual_sensor_params": visual_sensor_params}
 
 use_expert_data = True
 
@@ -101,7 +99,7 @@ if use_expert_data:
                                         batch_size=batch_size,
                                         state_len=state_len,
                                         achieved_goal_len=achieved_goal_len,)
-    with open('ur5_pickplace_40000_expert_data_WGCSL.pkl', 'rb') as f:
+    with open('dual_robot_pickplace_40000_expert_data_WGCSL.pkl', 'rb') as f:
     # 读取并反序列化数据
         her_buffer_buffer = pickle.load(f)
     f.close()
@@ -118,8 +116,8 @@ agent = WGCSL(state_dim, hidden_dim, action_dim,
                  actor_lr, critic_lr, lmbda, gamma, baw_delta, geaw_M, epochs, tau, device)
 
 load_agent = False 
-agent_num = 52
 if load_agent:
+    agent_num = 52
     agent.actor.load_state_dict(torch.load("./model/wgcsl_her_ur5_pick_%d.pkl" % agent_num))
 B_buffer = collections.deque(maxlen=B_capacity)
 
