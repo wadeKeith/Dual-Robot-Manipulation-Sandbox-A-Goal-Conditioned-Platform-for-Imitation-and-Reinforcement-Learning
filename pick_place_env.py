@@ -75,8 +75,8 @@ class PickPlace_UR5Env(object):
         n_action += 1*2 if self.gripper_enable else 0
         self.action_space = spaces.Box(low=-1, high=1, shape=(n_action,),dtype=np.float32)
         self.time = None
-        self.time_limitation = 200
-        self.n_sub_step = 60
+        self.time_limitation = 100
+        self.n_sub_step = 50
 
         
 
