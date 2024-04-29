@@ -32,7 +32,7 @@ class PickPlace_UR5Env(object):
         # Initialize the goal range
         self.blockUid = -1
         self.goal_range_low = np.array([0.2, -0.3, 0.04+0.725])
-        self.goal_range_high = np.array([0.4, 0.3, 0.04+0.725])
+        self.goal_range_high = np.array([0.4, 0.3, 1])
         # rgb_obs_space = spaces.Box(low=0, high=255, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1], 4), dtype=np.uint8)
         # depth_obs_space = spaces.Box(low=0, high=1, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1]), dtype=np.float32)
         # seg_obs_space = spaces.Box(low=-1, high=255, shape=(visual_sensor_params['image_size'][0], visual_sensor_params['image_size'][1]), dtype=np.int32)
@@ -41,6 +41,7 @@ class PickPlace_UR5Env(object):
             observation_bound = np.concatenate([observation_bound_now,observation_bound_now])
         elif self.control_type=='end':
             observation_bound = np.concatenate([np.ones(shape=(3,))*2,np.ones(shape=(3,))*2,
+                                                np.ones(shape=(3,))*2,np.ones(shape=(3,))*2,
                                                 np.ones(shape=(3,))*3.14159265359, np.ones(shape=(3,))*3.14159265359,
                                                 np.ones(shape=(3,))*2, np.ones(shape=(3,))*2,
                                                 np.ones(shape=(3,))*3.2, np.ones(shape=(3,))*3.2,
@@ -67,7 +68,7 @@ class PickPlace_UR5Env(object):
         n_action = 4*2 if self.control_type == "end" else 7*2  # control (x, y z) if "ee", else, control the 7 joints
         self.action_space = spaces.Box(low=-1, high=1, shape=(n_action,),dtype=np.float32)
         self.time = None
-        self.time_limitation = 200
+        self.time_limitation = 100
         self.n_sub_step = 50
     #     self.xin_left = self._pb.addUserDebugParameter("x_l", -1, 1, 0)
     #     self.yin_left = self._pb.addUserDebugParameter("y_l", -1, 1, 0)

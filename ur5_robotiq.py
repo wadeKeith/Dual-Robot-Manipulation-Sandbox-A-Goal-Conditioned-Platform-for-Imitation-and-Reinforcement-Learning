@@ -315,14 +315,16 @@ class UR5Robotiq85:
             right_arm_left_finger_info = self._pb.getLinkState(self.embodiment_id, self.right_arm_left_finger_pad_id,computeLinkVelocity=1)
             right_arm_right_finger_info = self._pb.getLinkState(self.embodiment_id, self.right_arm_right_finger_pad_id,computeLinkVelocity=1)
             right_arm_finger_pos = list((np.array(right_arm_left_finger_info[4])+np.array(right_arm_right_finger_info[4]))/2)
+            left_ee_pos = list(self._pb.getLinkState(self.embodiment_id, self.left_tcp_link_id)[4])
+            right_ee_pos = list(self._pb.getLinkState(self.embodiment_id, self.right_tcp_link_id)[4])
             left_ee_orn = list(self._pb.getEulerFromQuaternion(np.array(self._pb.getLinkState(self.embodiment_id, self.left_tcp_link_id)[5])))
             right_ee_orn = list(self._pb.getEulerFromQuaternion(np.array(self._pb.getLinkState(self.embodiment_id, self.right_tcp_link_id)[5])))
             left_arm_finger_linear_veocity = list((np.array(left_arm_left_finger_info[6])+np.array(left_arm_right_finger_info[6]))/2)
             right_arm_finger_linear_veocity = list((np.array(right_arm_left_finger_info[6])+np.array(right_arm_right_finger_info[6]))/2)
             left_arm_finger_angular_veocity = list((np.array(left_arm_left_finger_info[7])+np.array(left_arm_right_finger_info[7]))/2)
             right_arm_finger_angular_veocity = list((np.array(right_arm_left_finger_info[7])+np.array(right_arm_right_finger_info[7]))/2)
-            arm_obs = left_arm_finger_pos+right_arm_finger_pos+left_ee_orn+right_ee_orn+left_arm_finger_linear_veocity+right_arm_finger_linear_veocity+left_arm_finger_angular_veocity+right_arm_finger_angular_veocity
-            # self._pb.addUserDebugPoints(pointPositions = [(np.array(right_arm_left_finger_info[4])+np.array(right_arm_right_finger_info[4]))/2], pointColorsRGB = [[0, 0, 255]], pointSize= 40, lifeTime= 0)
+            arm_obs = left_arm_finger_pos+right_arm_finger_pos+left_ee_pos+right_ee_pos+left_ee_orn+right_ee_orn+left_arm_finger_linear_veocity+right_arm_finger_linear_veocity+left_arm_finger_angular_veocity+right_arm_finger_angular_veocity
+            # self._pb.addUserDebugPoints(pointPositions = [(np.array(self._pb.getLinkState(self.embodiment_id, self.left_tcp_link_id)[0])+(np.array(left_arm_left_finger_info[4])+np.array(left_arm_right_finger_info[4]))/2)/2], pointColorsRGB = [[0, 0, 255]], pointSize= 40, lifeTime= 0)
 
             left_positions_gripper = []
             right_positions_gripper = []

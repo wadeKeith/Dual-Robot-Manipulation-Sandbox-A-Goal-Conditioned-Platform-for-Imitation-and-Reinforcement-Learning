@@ -51,6 +51,6 @@ obs, reward, terminated, truncated, info,obs_dict = env.step(np.array([0,0,0,0,0
 while True:
     # obs, _,obs_dict = env.reset()
     # obs, reward, terminated, truncated, info,obs_dict = env.step(np.array(env.read_debug_parameter()))
-    obs, reward, terminated, truncated, info,obs_dict = env.step(np.array([0,0,0,0,0,0,-1,-1]))
+    obs, reward, terminated, truncated, info,obs_dict = env.step(np.array([0,0,0,0,0,0,0,0]))
     # env.step_simulation()
     # time.sleep(sim_params['timestep'])

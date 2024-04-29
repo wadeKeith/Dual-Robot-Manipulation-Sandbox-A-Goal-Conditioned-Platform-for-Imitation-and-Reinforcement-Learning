@@ -35,7 +35,7 @@ robot_params = {
     "reset_gripper_range": reset_gripper_range,
 }
 # control type: joint, end
-sim_params = {"use_gui":True,
+sim_params = {"use_gui":False,
               'timestep':1/240,
               'control_type':'end',
               'is_train':True,
@@ -71,8 +71,8 @@ for epoch in range(1000000):
         achieved_goal = obs_dict['achieved_goal']
         desired_goal = obs_dict['desired_goal']
         # ee_pos = obs[int(state_len/2):]
-        left_finger_pos = obs[:3]
-        right_finger_pos = obs[3:6]
+        left_finger_pos = ((obs[:3]+obs[6:9])/2+obs[:3])/2
+        right_finger_pos = ((obs[3:6]+obs[9:12])/2+obs[3:6])/2
         if distance(achieved_goal,left_finger_pos)<=distance(achieved_goal,right_finger_pos):
             finger_pos = left_finger_pos
             if distance(achieved_goal, finger_pos)>sim_params['distance_threshold'] and distance(achieved_goal,desired_goal)>sim_params['distance_threshold']:
