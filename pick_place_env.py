@@ -77,10 +77,29 @@ class PickPlace_UR5Env(object):
         self.time = None
         self.time_limitation = 100
         self.n_sub_step = 50
+        self.xin_left = self._pb.addUserDebugParameter("x_l", -1, 1, 0)
+        self.yin_left = self._pb.addUserDebugParameter("y_l", -1, 1, 0)
+        self.zin_left = self._pb.addUserDebugParameter("z_l", -1, 1, 0)
+        self.xin_right = self._pb.addUserDebugParameter("x_r", -1, 1, 0)
+        self.yin_right = self._pb.addUserDebugParameter("y_r", -1, 1, 0)
+        self.zin_right = self._pb.addUserDebugParameter("z_r", -1, 1, 0)
+        self.gripper_opening_length_contro_left = self._pb.addUserDebugParameter("gripper_l", -1, 1, 0)
+        self.gripper_opening_length_contro_right = self._pb.addUserDebugParameter("gripper_r", -1, 1, 0)
 
         
 
-    
+    def read_debug_parameter(self):
+        # read the value of task parameter
+        x_l = self._pb.readUserDebugParameter(self.xin_left)
+        y_l = self._pb.readUserDebugParameter(self.yin_left)
+        z_l = self._pb.readUserDebugParameter(self.zin_left)
+        x_r = self._pb.readUserDebugParameter(self.xin_right)
+        y_r = self._pb.readUserDebugParameter(self.yin_right)
+        z_r = self._pb.readUserDebugParameter(self.zin_right)
+        gripper_opening_length_l = self._pb.readUserDebugParameter(self.gripper_opening_length_contro_left)
+        gripper_opening_length_r = self._pb.readUserDebugParameter(self.gripper_opening_length_contro_right)
+
+        return x_l, y_l, z_l, x_r, y_r, z_r, gripper_opening_length_l, gripper_opening_length_r
 
     def reset(self,seed=None) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
         """

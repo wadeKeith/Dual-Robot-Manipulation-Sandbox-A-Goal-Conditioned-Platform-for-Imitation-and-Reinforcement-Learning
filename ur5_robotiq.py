@@ -217,15 +217,6 @@ class UR5Robotiq85:
                                 'right_arm_right_inner_knuckle_joint': 1,
                                 'right_arm_left_inner_finger_joint': -1,
                                 'right_arm_right_inner_finger_joint': -1}
-        # c = self._pb.createConstraint(self.embodiment_id, 17, self.embodiment_id, 15, self._pb.JOINT_POINT2POINT, [0, 0, 0], [0, -0.014, 0.043], [0, -0.034, 0.021])
-        # self._pb.changeConstraint(c, erp=0.1, maxForce=1000)
-        # c = self._pb.createConstraint(self.embodiment_id, 22, self.embodiment_id, 20, self._pb.JOINT_POINT2POINT, [0, 0, 0], [0, -0.014, 0.043], [0, -0.034, 0.021])
-        # self._pb.changeConstraint(c, erp=0.1, maxForce=1000)
-
-        c = self._pb.createConstraint(self.embodiment_id, 35, self.embodiment_id, 33, self._pb.JOINT_POINT2POINT, [0, 0, 0], [0, -0.014, 0.043], [0, -0.034, 0.021])
-        self._pb.changeConstraint(c, erp=0.1, maxForce=1000)
-        c = self._pb.createConstraint(self.embodiment_id, 40, self.embodiment_id, 38, self._pb.JOINT_POINT2POINT, [0, 0, 0], [0, -0.014, 0.043], [0, -0.034, 0.021])
-        self._pb.changeConstraint(c, erp=0.1, maxForce=1000)
         self.__setup_mimic_joints__(right_mimic_parent_name, right_mimic_children_names, 'right')
         self.__setup_mimic_joints__(left_mimic_parent_name, left_mimic_children_names,'left')
         
@@ -242,10 +233,10 @@ class UR5Robotiq85:
                 c = self._pb.createConstraint(self.embodiment_id, self.left_mimic_parent_id,
                                     self.embodiment_id, joint_id,
                                     jointType=self._pb.JOINT_GEAR,
-                                    jointAxis=[0, 1, 0],
+                                    jointAxis=[1, 0, 0],
                                     parentFramePosition=[0, 0, 0],
                                     childFramePosition=[0, 0, 0])
-                self._pb.changeConstraint(c, gearRatio=-multiplier, maxForce=100, erp=1)  # Note: the mysterious `erp` is of EXTREME importance
+                self._pb.changeConstraint(c, gearRatio=-multiplier, maxForce=1000, erp=1)  # Note: the mysterious `erp` is of EXTREME importance
         elif gripper_direction == 'right':
             self.right_mimic_parent_id = [joint.id for joint in self.joints if joint.name == mimic_parent_name][0]
             self.right_mimic_child_multiplier = {joint.id: mimic_children_names[joint.name] for joint in self.joints if joint.name in mimic_children_names}
@@ -253,10 +244,10 @@ class UR5Robotiq85:
                 c = self._pb.createConstraint(self.embodiment_id, self.right_mimic_parent_id,
                                     self.embodiment_id, joint_id,
                                     jointType=self._pb.JOINT_GEAR,
-                                    jointAxis=[0, 1, 0],
+                                    jointAxis=[1, 0, 0],
                                     parentFramePosition=[0, 0, 0],
                                     childFramePosition=[0, 0, 0])
-                self._pb.changeConstraint(c, gearRatio=-multiplier, maxForce=100, erp=1)  # Note: the mysterious `erp` is of EXTREME importance
+                self._pb.changeConstraint(c, gearRatio=-multiplier, maxForce=1000, erp=1)  # Note: the mysterious `erp` is of EXTREME importance
 
 
     def step_simulation(self):

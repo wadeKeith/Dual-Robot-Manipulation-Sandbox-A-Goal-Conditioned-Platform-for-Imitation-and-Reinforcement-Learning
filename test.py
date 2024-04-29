@@ -49,9 +49,9 @@ env =  PickPlace_UR5Env(sim_params=sim_params,
                         visual_sensor_params= visual_sensor_params)
 
 obs, _,obs_dict = env.reset()
-obs, reward, terminated, truncated, info,obs_dict = env.step(np.array([0,0,0,0,0,0,0,0]))
+# obs, reward, terminated, truncated, info,obs_dict = env.step(np.array([0,0,0,0,0,0,0,0]))
 while True:
     # obs, _,obs_dict = env.reset()
-    obs, reward, terminated, truncated, info,obs_dict = env.step(np.array([0,0,0,0,0,0,-1,-1]))
-    env.step_simulation()
-    time.sleep(sim_params['timestep'])
+    obs, reward, terminated, truncated, info,obs_dict = env.step(np.array(env.read_debug_parameter()))
+    # env.step_simulation()
+    # time.sleep(sim_params['timestep'])
