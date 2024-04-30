@@ -50,7 +50,7 @@ robot_params = {
     "reset_gripper_range": reset_gripper_range,
 }
 # control type: joint, end
-sim_params = {"use_gui":False,
+sim_params = {"use_gui":True,
               'timestep':1/240,
               'control_type':'end',
               'is_train':True,
@@ -81,7 +81,7 @@ evluation_policy(env=env, state_dim=state_dim,
                     action_dim = action_dim,
                     hidden_dim=hidden_dim, 
                     device=device,
-                    model_num=35)
+                    model_num=95)
 env.close()
 del env
 
