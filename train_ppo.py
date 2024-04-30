@@ -13,7 +13,7 @@ import collections
 
 def evluation_policy(env, state_dim, action_dim,hidden_dim, device, model_num):
     model = PolicyNet(state_dim, hidden_dim, action_dim).to(device)
-    model.load_state_dict(torch.load("./model/ppo_ur5_pick_actor_%d.pkl" % model_num))
+    model.load_state_dict(torch.load("./model/ppo_dual_robot_pick_actor_%d.pkl" % model_num))
     model.eval()
     episode_return = 0
     state,_,_ = env.reset()
@@ -35,15 +35,15 @@ np.random.seed(seed)
 torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
-reset_arm_poses = [0, -math.pi/2, math.pi*4/9, -math.pi*4/9,
-                            -math.pi/2, 0]
+reset_arm_poses = [0, -math.pi/2, -math.pi*5/9, math.pi*4/9, math.pi*3/4, 0, 
+                   0, math.pi/2, math.pi*5/9, -math.pi*4/9, -math.pi*3/4, 0]
 reset_gripper_range = [0, 0.085]
 visual_sensor_params = {
         'image_size': [128, 128],
-        'dist': 1.0,
+        'dist': 1.5,
         'yaw': 90.0,
         'pitch': -25.0,
-        'pos': [0.6, 0.0, 0.0525],
+        'pos': [0.5, 0.0, 1],
         'fov': 75.0,
         'near_val': 0.1,
         'far_val': 5.0,
@@ -57,7 +57,6 @@ robot_params = {
 sim_params = {"use_gui":False,
               'timestep':1/240,
               'control_type':'end',
-              'gripper_enable':True,
               'is_train':True,
               'distance_threshold':0.05,}
 
@@ -88,8 +87,8 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device(
 agent = PPOContinuous(state_dim, hidden_dim, action_dim, actor_lr, critic_lr, lmbda, epochs, eps, gamma, device, entropy_coef)
 
 agent_num = 97
-agent.actor.load_state_dict(torch.load("./model/wgcsl_her_ur5_pick_actor_%d.pkl" % agent_num))
-agent.critic.load_state_dict(torch.load("./model/wgcsl_her_ur5_pick_critic_%d.pkl" % agent_num))
+agent.actor.load_state_dict(torch.load("./model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % agent_num))
+agent.critic.load_state_dict(torch.load("./model/wgcsl_her_dual_robot_pick_critic_%d.pkl" % agent_num))
 
 
 
