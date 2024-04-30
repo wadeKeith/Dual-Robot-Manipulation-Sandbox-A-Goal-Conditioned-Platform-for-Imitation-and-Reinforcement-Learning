@@ -92,16 +92,6 @@ class ReplayBuffer_Trajectory:
         return batch
 
 
-# class PolicyNet(torch.nn.Module):
-#     def __init__(self, state_dim, hidden_dim, action_dim):
-#         super(PolicyNet, self).__init__()
-#         self.fc1 = torch.nn.Linear(state_dim, hidden_dim)
-#         self.fc2 = torch.nn.Linear(hidden_dim, hidden_dim)
-#         self.fc3 = torch.nn.Linear(hidden_dim, action_dim)
-
-#     def forward(self, x):
-#         x = F.relu(self.fc2(F.relu(self.fc1(x))))
-#         return torch.tanh(self.fc3(x))
 class PolicyNet(torch.nn.Module):
     def __init__(self, state_dim, hidden_dim, action_dim):
         super(PolicyNet, self).__init__()
@@ -145,7 +135,6 @@ class QValueNet(torch.nn.Module):
         return self.fc3(x)
 
 class WGCSL:
-    ''' DDPG算法 '''
     def __init__(self, state_dim, hidden_dim, action_dim,
                  actor_lr, critic_lr, lmbda, gamma, baw_delta, geaw_M, epochs, tau, device):
         self.action_dim = action_dim
@@ -227,11 +216,13 @@ class WGCSL:
         A_threshold = np.percentile(all_advantage_np,self.percentile_num)
         baw = self.BAW_compute(advantage.detach().cpu().numpy().copy(), A_threshold).to(self.device)
         geaw = torch.clip(torch.exp(advantage),0,self.geaw_M)
-        mu_actor_updata, _ = self.actor(states)
+        mu_action, std_action = self.actor(states)
+        action_dists = torch.distributions.Normal(mu_action, std_action)
+        log_probs = -torch.sum(action_dists.log_prob(actions),dim=1)
         # action_dis = torch.distributions.Normal(mu, sigma)
         # log_prob = action_dis.log_prob(actions)
         gamma_weigh = torch.tensor(self.gamma).pow(gamma_pow).to(self.device)
-        actor_loss = torch.mean(torch.sum(gamma_weigh * baw * geaw * (mu_actor_updata - actions).pow(2),dim = 1).pow(0.5)/self.action_dim)
+        actor_loss = torch.mean(gamma_weigh * baw * geaw * log_probs)
 
         # 策略网络就是为了使Q值最大化
         self.actor_optimizer.zero_grad()
