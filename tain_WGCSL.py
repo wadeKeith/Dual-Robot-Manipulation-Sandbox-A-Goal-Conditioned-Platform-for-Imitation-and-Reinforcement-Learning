@@ -13,7 +13,7 @@ import collections
 
 def evluation_policy(env, state_dim, action_dim,hidden_dim, device, model_num):
     model = PolicyNet(state_dim, hidden_dim, action_dim).to(device)
-    model.load_state_dict(torch.load("./model/wgcsl_her_ur5_pick_actor_%d.pkl" % model_num))
+    model.load_state_dict(torch.load("./model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % model_num))
     model.eval()
     episode_return = 0
     state,_,_ = env.reset()
@@ -182,8 +182,8 @@ for i in range(100):
                 })
             pbar.update(1)
             agent.percentile_num_update()
-    torch.save(agent.actor.state_dict(), "./model/wgcsl_her_ur5_pick_actor_%d.pkl" % i)
-    torch.save(agent.v_critic.state_dict(), "./model/wgcsl_her_ur5_pick_critic_%d.pkl" % i)
+    torch.save(agent.actor.state_dict(), "./model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % i)
+    torch.save(agent.v_critic.state_dict(), "./model/wgcsl_her_dual_robot_pick_critic_%d.pkl" % i)
     sim_params['is_train'] = False
     # sim_params['use_gui'] = True
     test_env  = PickPlace_UR5Env(sim_params, robot_params,visual_sensor_params)
@@ -205,12 +205,12 @@ episodes_list = list(range(len(return_list)))
 plt.plot(episodes_list, return_list)
 plt.xlabel('Episodes')
 plt.ylabel('Returns')
-plt.title('WGCSL with HER on {}'.format('UR5'))
+plt.title('WGCSL with HER on {}'.format('dual_robot'))
 plt.show()
 
 mv_return = rl_utils.moving_average(return_list, 9)
 plt.plot(episodes_list, mv_return)
 plt.xlabel('Episodes')
 plt.ylabel('Returns')
-plt.title('WGCSL on {}'.format('UR5'))
+plt.title('WGCSL on {}'.format('dual_robot'))
 plt.show()
