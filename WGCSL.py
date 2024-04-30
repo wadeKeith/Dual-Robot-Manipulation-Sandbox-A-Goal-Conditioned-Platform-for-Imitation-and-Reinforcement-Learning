@@ -168,7 +168,8 @@ class WGCSL:
         state = torch.tensor(state, dtype=torch.float).to(self.device)
         mu, sigma = self.actor(state)
         action_dist = torch.distributions.Normal(mu, sigma)
-        action = action_dist.sample()
+        action = action_dist.rsample()
+        # action = action_dist.sample()
         action = action.clamp(-1.0, 1.0)
         return action.detach().cpu().numpy()
 
@@ -192,8 +193,11 @@ class WGCSL:
         gamma_pow = torch.tensor(transition_dict['gamma_pow'],
                              dtype=torch.float).view(-1, 1).to(self.device)
 
-        mu_q_update,_ = self.actor(next_states)
-        q_targets = rewards + self.gamma * self.target_q_critic(next_states,mu_q_update) * (1 - dones)
+        next_mu,next_std = self.actor(next_states)
+        next_action_dist = torch.distributions.Normal(next_mu, next_std)
+        next_action = next_action_dist.rsample()
+        next_action = next_action.clamp(-1.0, 1.0)
+        q_targets = rewards + self.gamma * self.target_q_critic(next_states, next_action) * (1 - dones)
         # MSE损失函数
         q_critic_loss = torch.mean(
             F.mse_loss(self.q_critic(states, actions), q_targets))
