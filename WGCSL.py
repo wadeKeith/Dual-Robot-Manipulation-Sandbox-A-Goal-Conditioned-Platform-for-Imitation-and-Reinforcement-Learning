@@ -193,7 +193,7 @@ class WGCSL:
         gamma_pow = torch.tensor(transition_dict['gamma_pow'],
                              dtype=torch.float).view(-1, 1).to(self.device)
 
-        next_mu, = self.actor(next_states)
+        next_mu, _ = self.actor(next_states)
         # next_action_dist = torch.distributions.Normal(next_mu, next_std)
         # next_action = next_action_dist.rsample()
         # next_action = next_action.clamp(-1.0, 1.0)
