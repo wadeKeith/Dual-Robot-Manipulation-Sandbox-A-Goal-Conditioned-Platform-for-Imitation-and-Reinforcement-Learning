@@ -152,7 +152,7 @@ for i in range(100):
             })
 
             pbar.update(1)
-    torch.save(agent.actor.state_dict(), "./model/ppo_ur5_pick_actor_%d.pkl" % i)
+    torch.save(agent.actor.state_dict(), "./model/ppo_dual_robot_pick_actor_%d.pkl" % i)
     sim_params['is_train'] = False
     # sim_params['use_gui'] = True
     test_env  = PickPlace_UR5Env(sim_params, robot_params,visual_sensor_params)
