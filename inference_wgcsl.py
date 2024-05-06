@@ -53,7 +53,7 @@ robot_params = {
 sim_params = {"use_gui":True,
               'timestep':1/240,
               'control_type':'end',
-              'is_train':True,
+              'is_train':False,
               'distance_threshold':0.05,}
 
 
@@ -81,7 +81,7 @@ evluation_policy(env=env, state_dim=state_dim,
                     action_dim = action_dim,
                     hidden_dim=hidden_dim, 
                     device=device,
-                    model_num=95)
+                    model_num=25)
 env.close()
 del env
 

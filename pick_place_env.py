@@ -68,7 +68,7 @@ class PickPlace_UR5Env(object):
         n_action = 4*2 if self.control_type == "end" else 7*2  # control (x, y z) if "ee", else, control the 7 joints
         self.action_space = spaces.Box(low=-1, high=1, shape=(n_action,),dtype=np.float32)
         self.time = None
-        self.time_limitation = 120
+        self.time_limitation = 100
         self.n_sub_step = 50
     #     self.xin_left = self._pb.addUserDebugParameter("x_l", -1, 1, 0)
     #     self.yin_left = self._pb.addUserDebugParameter("y_l", -1, 1, 0)
