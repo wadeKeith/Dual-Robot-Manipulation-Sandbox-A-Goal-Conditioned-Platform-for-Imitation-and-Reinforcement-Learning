@@ -139,11 +139,11 @@ for i in range(100):
                 done = terminated or truncated
                 episode_return += reward
                 traj.store_step(action.copy(), state.copy(), reward, done)
-            # her_buffer.add_trajectory(traj)
+            her_buffer.add_trajectory(traj)
             return_list.append(episode_return)
             if info['is_success'] == True:
                 success_count+=1
-                her_buffer.add_trajectory(traj)
+                # her_buffer.add_trajectory(traj)
             if her_buffer.size() >= minimal_episodes:
                 her_ratio = 0.5
                 for _ in range(n_train):
