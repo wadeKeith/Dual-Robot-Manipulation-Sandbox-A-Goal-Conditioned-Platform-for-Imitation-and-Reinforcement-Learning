@@ -9,7 +9,7 @@ import math
 
 def evluation_policy(env, state_dim, action_dim,hidden_dim, device, model_num):
     model = PolicyNet(state_dim, hidden_dim, action_dim).to(device)
-    model.load_state_dict(torch.load("./model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % model_num))
+    model.load_state_dict(torch.load("../model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % model_num))
     model.eval()
     episode_return = 0
     state,_,_ = env.reset()

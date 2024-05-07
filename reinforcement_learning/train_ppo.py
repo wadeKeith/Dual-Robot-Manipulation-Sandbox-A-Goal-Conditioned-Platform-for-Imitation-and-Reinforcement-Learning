@@ -5,14 +5,15 @@ import numpy as np
 from tqdm import tqdm
 import torch
 import matplotlib.pyplot as plt
-from GAIL import PPOContinuous, GAIL, PolicyNet,ReplayBuffer_Trajectory
+from ppo import PPOContinuous, PolicyNet, her_process
 import math
 import pickle
 import rl_utils
+import collections
 
 def evluation_policy(env, state_dim, action_dim,hidden_dim, device, model_num):
     model = PolicyNet(state_dim, hidden_dim, action_dim).to(device)
-    model.load_state_dict(torch.load("./model/gail_dual_robot_pick_actor_%d.pkl" % model_num))
+    model.load_state_dict(torch.load("../model/ppo_dual_robot_pick_actor_%d.pkl" % model_num))
     model.eval()
     episode_return = 0
     state,_,_ = env.reset()
@@ -67,16 +68,15 @@ action_dim = env.action_space.shape[0]
 
 
 
-actor_lr = 3e-4
-critic_lr = 3e-4
-num_episodes = 100
+actor_lr = 3e-6
+critic_lr = 1e-7
+num_episodes = 50
 hidden_dim = 256
 gamma = 0.99999
 lmbda = 0.95
 entropy_coef = 0.01
 epochs = 100
 eps = 0.15
-lr_d = 3e-5
 state_len = env.observation_space['observation'].shape[0]
 achieved_goal_len = env.observation_space['achieved_goal'].shape[0]
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device(
@@ -85,23 +85,12 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device(
 
     
 agent = PPOContinuous(state_dim, hidden_dim, action_dim, actor_lr, critic_lr, lmbda, epochs, eps, gamma, device, entropy_coef)
-gail = GAIL(agent=agent,state_dim=state_dim,action_dim=action_dim,hidden_dim=hidden_dim,
-            lr_d=lr_d,device=device,epochs=epochs)
 
-buffer_size = 100000
-batch_size = 512
+agent_num = 99
+agent.actor.load_state_dict(torch.load("../model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % agent_num))
+agent.critic.load_state_dict(torch.load("../model/wgcsl_her_dual_robot_pick_critic_%d.pkl" % agent_num))
 
-her_buffer = ReplayBuffer_Trajectory(capacity= buffer_size, 
-                                    dis_threshold=sim_params['distance_threshold'], 
-                                    use_her=False,
-                                    batch_size=batch_size,
-                                    state_len=state_len,
-                                    achieved_goal_len=achieved_goal_len,)
-with open('dual_robot_pickplace_40000_expert_data_WGCSL.pkl', 'rb') as f:
-# 读取并反序列化数据
-    her_buffer_buffer = pickle.load(f)
-f.close()
-her_buffer.buffer = her_buffer_buffer.buffer
+
 
 return_list = []
 transition_dict = {
@@ -113,7 +102,6 @@ transition_dict = {
                 }
 for i in range(100):
     agent.lr_decay(i)
-    gail.lr_decay(i)
     with tqdm(total=int(num_episodes), desc='Iteration %d' % i) as pbar:
         success_count = 0
         for i_episode in range(num_episodes):
@@ -135,11 +123,11 @@ for i in range(100):
             return_list.append(episode_return)
             if info['is_success'] == True:
                 success_count+=1
-            # transition_dict,her_info = her_process(transition_dict, state_len, achieved_goal_len,sim_params['distance_threshold'])
+            transition_dict,her_info = her_process(transition_dict, state_len, achieved_goal_len,sim_params['distance_threshold'])
             trans_len = len(transition_dict['rewards'])
-            her_buffer.batch_size = trans_len
-            expert_dict = her_buffer.sample(0)
-            discriminator_loss, ppo_reward =gail.learn(expert_dict['states'], expert_dict['actions'], np.array(transition_dict['states']), np.array(transition_dict['actions']), np.array(transition_dict['next_states']), np.array(transition_dict['dones']))
+            if her_info!='cant her':
+            # trans_done = 1 if transition_dict['rewards'][-1] == 0 else 0
+                agent.update(transition_dict)
             transition_dict = {
                     "states": [],
                     "actions": [],
@@ -150,23 +138,21 @@ for i in range(100):
             pbar.set_postfix({
                 # 'goal':
                 # '%r' % (env.goal),
-                'ppo_reward':ppo_reward,
-                'discriminator_loss':discriminator_loss,
+                'trans_len':trans_len,
+                # 'trans_done':trans_done,
+                'her info':her_info,
                 'episode':
                     '%d' % (num_episodes* i + i_episode + 1),
                 'return':
                 '%.3f' % np.mean(return_list[:]),
-                "lr_a": agent.actor_optimizer.param_groups[0][
-                            "lr"],
-                "lr_d": gail.discriminator_optimizer.param_groups[0][
+                "lr": agent.actor_optimizer.param_groups[0][
                             "lr"],
                 "is success count": success_count,
                 # "HER ratio":her_ratio
             })
 
             pbar.update(1)
-    torch.save(agent.actor.state_dict(), "./model/gail_dual_robot_pick_actor_%d.pkl" % i)
-    torch.save(agent.critic.state_dict(), "./model/gail_dual_robot_pick_critic_%d.pkl" % i)
+    torch.save(agent.actor.state_dict(), "../model/ppo_dual_robot_pick_actor_%d.pkl" % i)
     sim_params['is_train'] = False
     # sim_params['use_gui'] = True
     test_env  = PickPlace_UR5Env(sim_params, robot_params,visual_sensor_params)
