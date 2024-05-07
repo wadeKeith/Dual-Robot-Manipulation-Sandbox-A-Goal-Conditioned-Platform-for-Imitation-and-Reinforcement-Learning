@@ -1,3 +1,7 @@
+import sys
+import os
+current_directory = os.getcwd()
+sys.path.append(current_directory)
 import torch
 import numpy as np
 from tqdm import tqdm

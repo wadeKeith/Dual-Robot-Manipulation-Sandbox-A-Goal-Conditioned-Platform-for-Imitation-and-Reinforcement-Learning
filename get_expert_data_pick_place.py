@@ -2,7 +2,7 @@ import numpy as np
 from pick_place_env import PickPlace_UR5Env
 import random
 import numpy as np
-from WGCSL import  ReplayBuffer_Trajectory, Trajectory
+from imitation_learning.WGCSL import  ReplayBuffer_Trajectory, Trajectory
 import math
 import torch
 import pickle

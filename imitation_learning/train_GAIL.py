@@ -1,3 +1,7 @@
+import sys
+import os
+current_directory = os.getcwd()
+sys.path.append(current_directory)
 import numpy as np
 from pick_place_env import PickPlace_UR5Env
 import random
@@ -12,7 +16,7 @@ import rl_utils
 
 def evluation_policy(env, state_dim, action_dim,hidden_dim, device, model_num):
     model = PolicyNet(state_dim, hidden_dim, action_dim).to(device)
-    model.load_state_dict(torch.load("../model/gail_dual_robot_pick_actor_%d.pkl" % model_num))
+    model.load_state_dict(torch.load(os.path.join(current_directory,"model/gail_dual_robot_pick_actor_%d.pkl" % model_num)))
     model.eval()
     episode_return = 0
     state,_,_ = env.reset()
@@ -97,7 +101,7 @@ her_buffer = ReplayBuffer_Trajectory(capacity= buffer_size,
                                     batch_size=batch_size,
                                     state_len=state_len,
                                     achieved_goal_len=achieved_goal_len,)
-with open('../dual_robot_pickplace_40000_expert_data_WGCSL.pkl', 'rb') as f:
+with open(os.path.join(current_directory,'dual_robot_pickplace_40000_expert_data_WGCSL.pkl'), 'rb') as f:
 # 读取并反序列化数据
     her_buffer_buffer = pickle.load(f)
 f.close()
@@ -165,8 +169,8 @@ for i in range(100):
             })
 
             pbar.update(1)
-    torch.save(agent.actor.state_dict(), "../model/gail_dual_robot_pick_actor_%d.pkl" % i)
-    torch.save(agent.critic.state_dict(), "../model/gail_dual_robot_pick_critic_%d.pkl" % i)
+    torch.save(agent.actor.state_dict(), os.path.join(current_directory,"model/gail_dual_robot_pick_actor_%d.pkl" % i))
+    torch.save(agent.critic.state_dict(), os.path.join(current_directory,"model/gail_dual_robot_pick_critic_%d.pkl" % i))
     sim_params['is_train'] = False
     # sim_params['use_gui'] = True
     test_env  = PickPlace_UR5Env(sim_params, robot_params,visual_sensor_params)

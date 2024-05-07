@@ -1,3 +1,7 @@
+import sys
+import os
+current_directory = os.getcwd()
+sys.path.append(current_directory)
 import numpy as np
 from pick_place_env import PickPlace_UR5Env
 import random
@@ -9,7 +13,7 @@ import math
 
 def evluation_policy(env, state_dim, action_dim,hidden_dim, device, model_num):
     model = PolicyNet(state_dim, hidden_dim, action_dim).to(device)
-    model.load_state_dict(torch.load("../model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % model_num))
+    model.load_state_dict(torch.load(os.path.join(current_directory,"model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % model_num)))
     model.eval()
     episode_return = 0
     state,_,_ = env.reset()

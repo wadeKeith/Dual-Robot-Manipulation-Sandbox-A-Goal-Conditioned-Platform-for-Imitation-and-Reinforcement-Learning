@@ -1,3 +1,7 @@
+import sys
+import os
+current_directory = os.getcwd()
+sys.path.append(current_directory)
 import numpy as np
 from pick_place_env import PickPlace_UR5Env
 import random
@@ -13,7 +17,7 @@ import collections
 
 def evluation_policy(env, state_dim, action_dim,hidden_dim, device, model_num):
     model = PolicyNet(state_dim, hidden_dim, action_dim).to(device)
-    model.load_state_dict(torch.load("../model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % model_num))
+    model.load_state_dict(torch.load(os.path.join(current_directory,"model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % model_num)))
     model.eval()
     episode_return = 0
     state,_,_ = env.reset()
@@ -99,7 +103,7 @@ if use_expert_data:
                                         batch_size=batch_size,
                                         state_len=state_len,
                                         achieved_goal_len=achieved_goal_len,)
-    with open('../dual_robot_pickplace_40000_expert_data_WGCSL.pkl', 'rb') as f:
+    with open(os.path.join(current_directory,'dual_robot_pickplace_40000_expert_data_WGCSL.pkl'), 'rb') as f:
     # 读取并反序列化数据
         her_buffer_buffer = pickle.load(f)
     f.close()
@@ -118,7 +122,7 @@ agent = WGCSL(state_dim, hidden_dim, action_dim,
 load_agent = False 
 if load_agent:
     agent_num = 52
-    agent.actor.load_state_dict(torch.load("../model/wgcsl_her_ur5_pick_%d.pkl" % agent_num))
+    agent.actor.load_state_dict(torch.load(os.path.join(current_directory,"model/wgcsl_her_ur5_pick_%d.pkl" % agent_num)))
 B_buffer = collections.deque(maxlen=B_capacity)
 
 
@@ -182,8 +186,8 @@ for i in range(100):
                 })
             pbar.update(1)
             agent.percentile_num_update()
-    torch.save(agent.actor.state_dict(), "../model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % i)
-    torch.save(agent.v_critic.state_dict(), "../model/wgcsl_her_dual_robot_pick_critic_%d.pkl" % i)
+    torch.save(agent.actor.state_dict(), os.path.join(current_directory,"model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % i))
+    torch.save(agent.v_critic.state_dict(), os.path.join(current_directory,"model/wgcsl_her_dual_robot_pick_critic_%d.pkl" % i))
     sim_params['is_train'] = False
     # sim_params['use_gui'] = True
     test_env  = PickPlace_UR5Env(sim_params, robot_params,visual_sensor_params)
@@ -199,7 +203,7 @@ for i in range(100):
 
 env.close()
 del env
-with open('../wgcsl_her_buffer_pickplace_all.pkl', 'wb') as file:
+with open(os.path.join(current_directory,'wgcsl_her_buffer_pickplace_all.pkl'), 'wb') as file:
     pickle.dump(her_buffer, file)
 episodes_list = list(range(len(return_list)))
 plt.plot(episodes_list, return_list)

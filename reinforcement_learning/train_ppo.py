@@ -1,3 +1,7 @@
+import sys
+import os
+current_directory = os.getcwd()
+sys.path.append(current_directory)
 import numpy as np
 from pick_place_env import PickPlace_UR5Env
 import random
@@ -13,7 +17,7 @@ import collections
 
 def evluation_policy(env, state_dim, action_dim,hidden_dim, device, model_num):
     model = PolicyNet(state_dim, hidden_dim, action_dim).to(device)
-    model.load_state_dict(torch.load("../model/ppo_dual_robot_pick_actor_%d.pkl" % model_num))
+    model.load_state_dict(torch.load(os.path.join(current_directory,"model/ppo_dual_robot_pick_actor_%d.pkl" % model_num)))
     model.eval()
     episode_return = 0
     state,_,_ = env.reset()
@@ -86,9 +90,9 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device(
     
 agent = PPOContinuous(state_dim, hidden_dim, action_dim, actor_lr, critic_lr, lmbda, epochs, eps, gamma, device, entropy_coef)
 
-agent_num = 99
-agent.actor.load_state_dict(torch.load("../model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % agent_num))
-agent.critic.load_state_dict(torch.load("../model/wgcsl_her_dual_robot_pick_critic_%d.pkl" % agent_num))
+agent_num = 0
+agent.actor.load_state_dict(torch.load(os.path.join(current_directory,"model/wgcsl_her_dual_robot_pick_actor_%d.pkl" % agent_num)))
+agent.critic.load_state_dict(torch.load(os.path.join(current_directory,"model/wgcsl_her_dual_robot_pick_critic_%d.pkl" % agent_num)))
 
 
 
@@ -152,7 +156,7 @@ for i in range(100):
             })
 
             pbar.update(1)
-    torch.save(agent.actor.state_dict(), "../model/ppo_dual_robot_pick_actor_%d.pkl" % i)
+    torch.save(agent.actor.state_dict(), os.path.join(current_directory,"model/ppo_dual_robot_pick_actor_%d.pkl" % i))
     sim_params['is_train'] = False
     # sim_params['use_gui'] = True
     test_env  = PickPlace_UR5Env(sim_params, robot_params,visual_sensor_params)
