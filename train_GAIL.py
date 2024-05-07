@@ -137,6 +137,7 @@ for i in range(100):
                 success_count+=1
             # transition_dict,her_info = her_process(transition_dict, state_len, achieved_goal_len,sim_params['distance_threshold'])
             trans_len = len(transition_dict['rewards'])
+            her_buffer.batch_size = trans_len
             expert_dict = her_buffer.sample(0)
             discriminator_loss, ppo_reward =gail.learn(expert_dict['states'], expert_dict['actions'], np.array(transition_dict['states']), np.array(transition_dict['actions']), np.array(transition_dict['next_states']), np.array(transition_dict['dones']))
             transition_dict = {

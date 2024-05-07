@@ -105,7 +105,7 @@ class PPOContinuous:
         # 动作是正态分布
         old_log_probs = action_dists.log_prob(actions)
 
-        updata_size = 2
+        updata_size = 10
         for _ in range(updata_size):
             mu, std = self.actor(states)
             action_dists = torch.distributions.Normal(mu, std)
