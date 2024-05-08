@@ -148,12 +148,14 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.fc1 = torch.nn.Linear(state_dim + action_dim, hidden_dim)
         self.fc2 = torch.nn.Linear(hidden_dim, hidden_dim)
-        self.fc3 = torch.nn.Linear(hidden_dim, 1)
+        self.fc3 = torch.nn.Linear(hidden_dim, hidden_dim)
+        self.fc4 = torch.nn.Linear(hidden_dim, 1)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        return self.fc3(x)
+        x = F.relu(self.fc3(x))
+        return F.relu(self.fc4(x))
     
 
 class WGAN:
@@ -162,7 +164,7 @@ class WGAN:
         self.lr_d = lr_d
         self.discriminator = Discriminator(state_dim, hidden_dim,
                                            action_dim).to(self.device)
-        self.discriminator_optimizer = torch.optim.Adam(
+        self.discriminator_optimizer = torch.optim.RMSprop(
             self.discriminator.parameters(), lr=self.lr_d,eps=1e-5)
         self.agent = agent
         self.epochs = epochs
@@ -182,7 +184,7 @@ class WGAN:
             expert_prob = self.discriminator(expert_sa)
             agent_prob = self.discriminator(agent_sa)
             epsilon = torch.rand(expert_sa.shape, device=self.device, requires_grad=True)
-            discriminator_loss = -(torch.mean(expert_prob) - torch.mean(agent_prob)) + self.gradient_penalty(expert_sa, agent_sa, epsilon)
+            discriminator_loss = -(torch.mean(expert_prob) - torch.mean(agent_prob)) + self.gradient_penalty(expert_sa.detach(), agent_sa.detach(), epsilon)
             self.discriminator_optimizer.zero_grad()
             discriminator_loss.backward(retain_graph=True)
 
@@ -190,7 +192,7 @@ class WGAN:
 
             self.discriminator_optimizer.step()
 
-        rewards = -self.discriminator(agent_sa).detach().cpu().numpy()
+        rewards = self.discriminator(agent_sa).detach().cpu().numpy()
         transition_dict = {
             'states': agent_s,
             'actions': agent_a,
@@ -199,7 +201,7 @@ class WGAN:
             'dones': dones
         }
         self.agent.update(transition_dict)
-        return discriminator_loss.detach().cpu().numpy().copy(), np.sum(rewards.copy())
+        return -(torch.mean(expert_prob) - torch.mean(agent_prob)).detach().cpu().numpy().copy(), np.mean(rewards.copy())
     def gradient_penalty(self, expert_sa, agent_sa, epsilon):
         mix_sa = expert_sa * epsilon + agent_sa * (1 - epsilon)
         mix_prob = self.discriminator(mix_sa)
