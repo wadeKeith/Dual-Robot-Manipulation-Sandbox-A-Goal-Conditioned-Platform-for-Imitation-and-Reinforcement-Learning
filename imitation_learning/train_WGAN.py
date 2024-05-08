@@ -71,8 +71,8 @@ action_dim = env.action_space.shape[0]
 
 
 
-actor_lr = 3e-5
-critic_lr = 3e-5
+actor_lr = 1e-5
+critic_lr = 1e-5
 num_episodes = 100
 hidden_dim = 256
 gamma = 0.99999
@@ -80,8 +80,8 @@ lmbda = 0.95
 entropy_coef = 0.01
 epochs = 100
 eps = 0.15
-lr_d = 3e-4
-c_lambda = 10
+lr_d = 3e-5
+c_lambda = 2
 state_len = env.observation_space['observation'].shape[0]
 achieved_goal_len = env.observation_space['achieved_goal'].shape[0]
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device(

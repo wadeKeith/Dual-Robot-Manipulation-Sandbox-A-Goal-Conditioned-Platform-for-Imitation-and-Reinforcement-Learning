@@ -176,15 +176,21 @@ class WGAN:
 
         expert_sa = torch.cat([expert_states, expert_actions], dim=1)
         agent_sa = torch.cat([agent_states, agent_actions], dim=1)
-        expert_prob = self.discriminator(expert_sa)
-        agent_prob = self.discriminator(agent_sa)
-        epsilon = torch.rand(expert_sa.shape, device=self.device, requires_grad=True)
-        discriminator_loss = -F.mse_loss(expert_prob, agent_prob) + self.gradient_penalty(expert_sa, agent_sa, epsilon)
-        self.discriminator_optimizer.zero_grad()
-        discriminator_loss.backward()
-        self.discriminator_optimizer.step()
+        discriminator_iterations = 10
+        discriminator_loss = 0
+        for _ in range(discriminator_iterations):
+            expert_prob = self.discriminator(expert_sa)
+            agent_prob = self.discriminator(agent_sa)
+            epsilon = torch.rand(expert_sa.shape, device=self.device, requires_grad=True)
+            discriminator_loss = -(torch.mean(expert_prob) - torch.mean(agent_prob)) + self.gradient_penalty(expert_sa, agent_sa, epsilon)
+            self.discriminator_optimizer.zero_grad()
+            discriminator_loss.backward(retain_graph=True)
 
-        rewards = torch.exp(-(expert_prob-agent_prob).norm(2,dim=1)).detach().cpu().numpy()
+            # nn.utils.clip_grad_norm_(self.discriminator.parameters(), max_norm=2, norm_type=2)
+
+            self.discriminator_optimizer.step()
+
+        rewards = -self.discriminator(agent_sa).detach().cpu().numpy()
         transition_dict = {
             'states': agent_s,
             'actions': agent_a,

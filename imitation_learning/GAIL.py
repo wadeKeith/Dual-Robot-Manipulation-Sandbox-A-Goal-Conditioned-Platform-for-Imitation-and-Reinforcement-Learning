@@ -185,7 +185,7 @@ class GAIL:
         discriminator_loss.backward()
         self.discriminator_optimizer.step()
 
-        rewards = -torch.log(agent_prob).detach().cpu().numpy()
+        rewards = -torch.log(self.discriminator(agent_states, agent_actions)).detach().cpu().numpy()
         transition_dict = {
             'states': agent_s,
             'actions': agent_a,
