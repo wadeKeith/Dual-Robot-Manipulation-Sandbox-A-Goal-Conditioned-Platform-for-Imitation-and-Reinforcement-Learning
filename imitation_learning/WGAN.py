@@ -155,7 +155,7 @@ class Discriminator(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
-        return F.relu(self.fc4(x))
+        return F.sigmoid(self.fc4(x))
     
 
 class WGAN:
@@ -178,7 +178,7 @@ class WGAN:
 
         expert_sa = torch.cat([expert_states, expert_actions], dim=1)
         agent_sa = torch.cat([agent_states, agent_actions], dim=1)
-        discriminator_iterations = 10
+        discriminator_iterations = 5
         discriminator_loss = 0
         for _ in range(discriminator_iterations):
             expert_prob = self.discriminator(expert_sa)
