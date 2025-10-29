@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="dual_robot_gazebo">
+  
+  <link name="world"/>
+
+  <!-- <xacro:include filename="$(find dual_gazebo)/urdf/inc/common.gazebo.xacro" /> -->
+
+  <!-- import UR5e macro -->
+  <xacro:include filename="$(find dual_ur5e_driver)/urdf/inc/ur5e_macro.xacro"/>
+
+
+  <!-- parameters -->
+  <xacro:arg name="joint_limit_params" default="$(find dual_description)/config/joint_limits.yaml"/>
+  <xacro:arg name="kinematics_params" default="$(find dual_description)/config/right_robot_kinematics.yaml"/>
+  <xacro:arg name="physical_params" default="$(find dual_description)/config/physical_parameters.yaml"/>
+  <xacro:arg name="visual_params" default="$(find dual_description)/config/visual_parameters.yaml"/>
+  <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
+  <xacro:arg name="safety_limits" default="false"/>
+  <xacro:arg name="safety_pos_margin" default="0.15"/>
+  <xacro:arg name="safety_k_position" default="20"/>
+
+  <!-- arm -->
+  <xacro:ur5e_robot
+  prefix=""
+  joint_limits_parameters_file="$(arg joint_limit_params)"
+  kinematics_parameters_file="$(arg kinematics_params)"
+  physical_parameters_file="$(arg physical_params)"
+  visual_parameters_file="$(arg visual_params)"
+  transmission_hw_interface="$(arg transmission_hw_interface)"
+  safety_limits="$(arg safety_limits)"
+  safety_pos_margin="$(arg safety_pos_margin)"
+  safety_k_position="$(arg safety_k_position)"/>
+
+  <joint name="world_joint" type="fixed">
+    <parent link="world" />
+    <child link = "base_link" />
+    <origin xyz="-0.38 -0.175 1.383" rpy="2.36 0.0 0.0" />
+  </joint>
+  
+  <!-- add 2f-flange -->
+  <xacro:include filename="$(find dual_description)/urdf/inc/ff_flange_urdf.xacro"/>
+  <xacro:ff_flange_urdf
+      prefix=""
+      z_rot="3.14"/>
+  <!-- add grippers adapter  -->
+  <link name="connector_gripper_link">
+    <inertial>
+      <origin xyz="-0.0021162 0.0027073 -0.0072275" rpy="0 0 0" />
+      <mass value="0.040886" />
+      <inertia ixx="1.6671E-05" ixy="3.2571E-07" ixz="-8.7288E-08" iyy="1.6561E-05" iyz="9.1285E-08" izz="3.1818E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robotiq_85_description/meshes/visual/connector_gripper_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robotiq_85_description/meshes/collision/connector_gripper_link.STL" />
+      </geometry>
+    </collision>
+  </link> 
+  <joint name="ur_to_connector" type="fixed">
+      <parent link="ff_flange_link"/>
+      <child link="connector_gripper_link"/>
+      <origin xyz="0 0 0.011" rpy="0 0 -1.57 " />
+  </joint>
+  <link name="gripper_tcp"/>
+  <!-- TCP frame -->
+  <joint name="tcp_joint" type="fixed">
+  <origin xyz="0 0 0.13" rpy="${pi/2} ${-pi/2} -1.57"/>
+  <parent link="connector_gripper_link"/>
+  <child link="gripper_tcp"/>
+  </joint>
+  
+
+    
+
+
+
+  
+  <!-- add camera2-->
+  <!-- <link name="camera2_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0.0149 0 0.0175" rpy="1.57 0 1.57"/>
+      <geometry>
+        <mesh filename="package://realsense_ros_gazebo/meshes/d435.dae" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.0149 0 0.0175" rpy="1.57 0 1.57"/>
+      <geometry>
+        <mesh filename="package://realsense_ros_gazebo/meshes/d435.dae" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="camera2_optical_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+    <parent link="camera2_link"/>
+    <child link="camera2_frame_optical"/>
+  </joint>
+
+    <link name="camera2_frame_optical"/>
+    <joint name="kinect_joint" type="fixed">
+      <origin xyz="0 0.055 0.011" rpy="0 -1.57 -1.57"/>
+      <parent link="ff_flange_link"/>
+      <child link="camera2_link"/>
+    </joint> -->
+
+
+  
+
+
+
+</robot>

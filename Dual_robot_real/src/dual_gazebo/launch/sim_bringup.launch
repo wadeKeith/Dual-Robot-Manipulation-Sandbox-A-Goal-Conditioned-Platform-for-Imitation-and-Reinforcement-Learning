@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="robot_name"/>
+
+  <arg name="limited" default="false"/>
+  <arg name="paused" default="false"/>
+  <arg name="gui" default="true"/>
+  <arg name="debug" default="false" />
+  <arg name="sim" default="true" />
+
+  <!-- startup simulated world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <!-- <arg name="world_name" default="worlds/empty.world"/> -->
+    <arg name="world_name" default="$(find dual_gazebo)/worlds/sim.world"/>
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)"/>
+  </include>
+
+
+  <!--left arm-->
+  <group ns="left">
+      <include file="$(find dual_gazebo)/launch/inc/left_arm.launch">
+        <arg name="init_pose" value="-x 0 -y 0.0 -z 0.0"/>
+        <arg name="robot_name" value="left"/>
+      </include>
+
+  </group>
+
+  <!-- right arm -->
+  <group ns="right">
+
+      <include file="$(find dual_gazebo)/launch/inc/right_arm.launch">
+        <arg name="init_pose" value="-x 0.0 -y 0.0 -z -0.0"/>
+        <arg name="robot_name" value="right"/>
+      </include>
+
+  </group>
+  <node pkg="dual_gazebo" type="fixed_tf_broadcaster_left_arm.py" name="broadcaster_fixed_left_arm" />
+  <node pkg="dual_gazebo" type="fixed_tf_broadcaster_right_arm.py" name="broadcaster_fixed_right_arm" />
+
+  <node pkg="move_demo" type="gripper_move_left.py" name= "gripper_move_left"/>
+	<node pkg="move_demo" type="gripper_move_right.py" name= "gripper_move_right"/>
+
+	<node pkg="move_demo" type="joint_move_left.py" name= "joint_move_left"/>
+	<node pkg="move_demo" type="joint_move_right.py" name= "joint_move_right"/>
+
+	<!-- <node pkg="move_demo" type="go_init_left.py" name= "go_init_left"/>
+	<node pkg="move_demo" type="go_init_right.py" name= "go_init_right"/> -->
+  
+  <!-- body -->
+  <group ns="body">
+      <include file="$(find dual_gazebo)/launch/inc/body.launch">
+        <arg name="robot_name" value="body"/>
+      </include>
+  </group>
+  <node pkg="dual_gazebo" type="fixed_tf_broadcaster_body.py" name="broadcaster_fixed_body" />
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find dual_gazebo)/config/view_rviz.rviz" required="false" /> -->
+</launch>
+
+

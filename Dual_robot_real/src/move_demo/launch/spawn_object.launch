@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node name="box_blue" pkg="gazebo_ros" type="spawn_model"
+    args="-file $(find move_demo)/models/box_blue/model.sdf -sdf -model box_blue -x 0.260 -y 0.160 -z 1.05" />
+
+  <node name="box_orange" pkg="gazebo_ros" type="spawn_model"
+    args="-file $(find move_demo)/models/box_orange/model.sdf -sdf -model box_orange -x 0.470 -y 0.160 -z 1.05" />
+
+  <node name="basket" pkg="gazebo_ros" type="spawn_model"
+    args="-file $(find move_demo)/models/basket/model.sdf -sdf -model basket -x 0.0 -y 0.160 -z 0.92" />
+  
+</launch>

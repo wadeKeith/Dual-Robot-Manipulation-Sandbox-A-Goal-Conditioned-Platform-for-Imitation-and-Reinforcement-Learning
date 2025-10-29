@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/media/jt/Extreme SSD/Github/Dual_robot_real/src/lib/ur_kinematics/include/ur_kinematics/ikfast.h
+vector
+-
+list
+-
+stdexcept
+-
+
+/media/jt/Extreme SSD/Github/Dual_robot_real/src/lib/ur_kinematics/include/ur_kinematics/ur_kin.h
+
+/media/jt/Extreme SSD/Github/Dual_robot_real/src/lib/ur_kinematics/src/ur_kin.cpp
+ur_kinematics/ur_kin.h
+-
+math.h
+-
+stdio.h
+-
+ur_kinematics/ikfast.h
+-
+

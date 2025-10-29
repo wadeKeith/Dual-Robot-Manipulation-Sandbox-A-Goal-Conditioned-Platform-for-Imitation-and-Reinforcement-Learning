@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<launch>
+
+    <group ns="right">
+        <include file="$(find ur_robot_driver)/launch/ur5e_bringup.launch">
+            <arg name="robot_ip" value="192.168.1.12" />
+            <arg name="tf_prefix" value="right_arm_"/>
+            <arg name="robot_tf_prefix" value="right_arm_tf"/>
+            <arg name="reverse_port" value="50005" />
+            <arg name="script_sender_port" value="50006"/>
+            <arg name="trajectory_port" value="50007"/>
+            <arg name="script_command_port" value="50008"/>
+            <arg name="controller_config_file" value="$(find dual_ur5e_driver)/config/right_robot_controllers.yaml"/>
+            <arg name="robot_description_file" value="$(find dual_ur5e_driver)/urdf/right_arm_gripper.xacro" />
+            <arg name="kinematics_config" value="$(find dual_description)/config/right_robot_kinematics.yaml"/>
+        </include>
+    </group>
+
+    <node pkg="dual_ur5e_driver" type="fixed_tf_broadcaster_right_arm.py" name="broadcaster_fixed_right_arm" />
+
+    <node pkg="robotiq_2f_gripper_control" type="Robotiq2FGripperRtuNode.py" name="robotiq2FGripper" args="/dev/ttyUSB0" output="screen" />
+
+    <group ns="top_camera">
+    <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
+      <arg name="serial_no"             value="233522076091"/>
+      <arg name="tf_prefix"         		value="top_camera"/>
+      <arg name="initial_reset"         value="false"/>
+      <arg name="reconnect_timeout"     value="6.0"/>
+      <arg name="align_depth"         default="true"/>
+    </include>
+  </group>
+
+  <group ns="right_camera">
+    <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
+      <arg name="serial_no"             value="233522075914"/>
+      <arg name="tf_prefix"		          value="right_camera"/>
+      <arg name="initial_reset"         value="false"/>
+      <arg name="reconnect_timeout"     value="6.0"/>
+      <arg name="align_depth"         default="true"/>
+    </include>
+  </group>
+    
+    <!-- <include file="$(find dual_description)/launch/load_dual_robot.launch"/> -->
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find dual_ur5e_driver)/config/view_rviz.rviz" required="false" /> -->
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find dual_gazebo)/config/view_rviz.rviz" required="false" />  -->
+</launch>

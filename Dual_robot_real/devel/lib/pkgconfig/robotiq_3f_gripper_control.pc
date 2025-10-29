@@ -1,0 +1,8 @@
+prefix=/media/jt/Extreme SSD/Github/Dual_robot_real/devel
+
+Name: robotiq_3f_gripper_control
+Description: Description of robotiq_3f_gripper_control
+Version: 1.0.0
+Cflags: -I/media/jt/Extreme SSD/Github/Dual_robot_real/devel/include
+Libs: -L${prefix}/lib -lrobotiq_3f_gripper_control
+Requires: controller_manager diagnostic_updater dynamic_reconfigure hardware_interface robotiq_ethercat roscpp rospy socketcan_interface std_srvs robotiq_3f_gripper_articulated_msgs

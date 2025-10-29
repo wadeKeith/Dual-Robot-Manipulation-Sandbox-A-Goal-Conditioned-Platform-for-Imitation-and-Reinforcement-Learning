@@ -1,0 +1,2 @@
+set(object_msgs_MESSAGE_FILES "/media/jt/Extreme SSD/Github/Dual_robot_real/src/lib/general-message-pkgs/object_msgs/msg/Object.msg;/media/jt/Extreme SSD/Github/Dual_robot_real/src/lib/general-message-pkgs/object_msgs/msg/ObjectPose.msg")
+set(object_msgs_SERVICE_FILES "/media/jt/Extreme SSD/Github/Dual_robot_real/src/lib/general-message-pkgs/object_msgs/srv/ObjectInfo.srv;/media/jt/Extreme SSD/Github/Dual_robot_real/src/lib/general-message-pkgs/object_msgs/srv/RegisterObject.srv")

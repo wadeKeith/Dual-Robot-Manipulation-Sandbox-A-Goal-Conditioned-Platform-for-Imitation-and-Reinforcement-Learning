@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>	
+
+	<!--start server -->
+	<node pkg="move_demo" type="gripper_move_left.py" name= "gripper_move_left"/>
+	<node pkg="move_demo" type="gripper_move_right.py" name= "gripper_move_right"/>
+
+	<node pkg="move_demo" type="joint_move_left.py" name= "joint_move_left"/>
+	<node pkg="move_demo" type="joint_move_right.py" name= "joint_move_right"/>
+
+	<node pkg="move_demo" type="go_init_left.py" name= "go_init_left"/>
+	<node pkg="move_demo" type="go_init_right.py" name= "go_init_right"/>
+
+	
+</launch>

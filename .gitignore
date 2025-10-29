@@ -3,3 +3,4 @@
 *.pkl
 model/*
 nohup.out
+checkpoints/

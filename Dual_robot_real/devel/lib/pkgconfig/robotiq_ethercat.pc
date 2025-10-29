@@ -1,0 +1,8 @@
+prefix=/media/jt/Extreme SSD/Github/Dual_robot_real/devel
+
+Name: robotiq_ethercat
+Description: Description of robotiq_ethercat
+Version: 1.0.0
+Cflags: -I/media/jt/Extreme SSD/Github/Dual_robot_real/src/robotiq_driver/robotiq_ethercat/include
+Libs: -L${prefix}/lib -lrobotiq_ethercat
+Requires: soem roscpp

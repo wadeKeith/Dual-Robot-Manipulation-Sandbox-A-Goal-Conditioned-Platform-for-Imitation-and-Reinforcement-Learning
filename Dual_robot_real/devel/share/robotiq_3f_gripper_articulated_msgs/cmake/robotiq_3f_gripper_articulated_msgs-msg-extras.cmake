@@ -1,0 +1,2 @@
+set(robotiq_3f_gripper_articulated_msgs_MESSAGE_FILES "/media/jt/Extreme SSD/Github/Dual_robot_real/src/robotiq_driver/robotiq_3f_gripper_articulated_msgs/msg/Robotiq3FGripperRobotInput.msg;/media/jt/Extreme SSD/Github/Dual_robot_real/src/robotiq_driver/robotiq_3f_gripper_articulated_msgs/msg/Robotiq3FGripperRobotOutput.msg")
+set(robotiq_3f_gripper_articulated_msgs_SERVICE_FILES "")
