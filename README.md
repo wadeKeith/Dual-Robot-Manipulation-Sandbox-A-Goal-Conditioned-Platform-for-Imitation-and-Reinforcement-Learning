@@ -139,3 +139,30 @@ The `Dual_robot_real/` directory contains a Catkin workspace with launch files a
 - **Legacy folder:** The older `UR5e_with_RL/` snapshot has been merged into the main codebase and can be removed after verifying no custom scripts depend on it.
 
 Happy experimenting!
+
+---
+
+## Acknowledgements
+
+This project builds upon the excellent open-source tooling provided by the PyBullet community and the wider research ecosystem around UR5 manipulators, Robotiq grippers, and goal-conditioned reinforcement learning. We are grateful to contributors of the upstream libraries (PyBullet, Gymnasium, PyTorch, and related robotics assets) whose efforts make simulation-first experimentation fast and reproducible.
+
+We also thank collaborators and lab mates who supplied feedback on the task designs and provided early testing on the physical dual-UR5 platform.
+
+---
+
+## Citation
+
+If this repository accelerates your research, please cite it using the entry below. Adjust the author and year fields to match your publication venue requirements.
+
+```bibtex
+@misc{dualrobot2024,
+  title        = {Dual Robot Manipulation Sandbox},
+  author       = {Cheng Yin},
+  year         = {2024},
+  publisher    = {GitHub},
+  howpublished = {\url{https://github.com/wadeKeith/Dual_robot}},
+  note         = {PyBullet-based UR5 manipulation environments and learning pipelines}
+}
+```
+
+When referencing individual algorithms (WGCSL, GAIL, WGAN-GP, SAC, DDPG, PPO) please also cite the original papers alongside this repository.
