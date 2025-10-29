@@ -1,0 +1,204 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, fit}
+\newcommand{\code}[1]{\texttt{\footnotesize\path{#1}}} % 等宽+可断行的代码行
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue
+}
+\title{Dual Robot Manipulation Sandbox: A Goal-Conditioned Platform for Imitation and Reinforcement Learning}
+\author{Cheng Yin\\The School of Mechanical Science and Engineering\\Huazhong University of Science and Technology, China}
+\date{\today}
+\begin{document}
+\maketitle
+\begin{abstract}
+This technical report documents the design, implementation, and intended research workflow of the \emph{Dual Robot Manipulation Sandbox}\footnote{Code available at \url{https://github.com/wadeKeith/Dual-Robot-Manipulation-Sandbox-A-Goal-Conditioned-Platform-for-Imitation-and-Reinforcement-Learning}.}. The project offers a reproducible bridge between physics-based simulation, heuristic demonstration harvesting, imitation learning, and reinforcement learning for dual- and single-arm UR5 manipulators. We provide an overview of the software architecture, the environment abstractions that enable goal-conditioned control, and the data and learning pipelines that turn those abstractions into working policies. Particular attention is paid to the integration of Hindsight Experience Replay (HER), weighted goal-conditioned supervision, and adversarial imitation---three algorithmic pillars that make the sandbox a compelling venue for rapid experimentation. Beyond code descriptions, this report narrates the evolution of the system into an integrated story that can guide future extensions and deployment onto physical hardware.
+\end{abstract}
+
+\section{Introduction}
+Manipulation research increasingly depends on modular software stacks that lower the cost of iterating over environment variants, collecting demonstrations, and training agents. The \texttt{Dual Robot Manipulation Sandbox} was conceived to meet this need for goal-conditioned UR5 tasks in PyBullet, bringing three complementary environments (dual-arm pick-and-place, single-arm pick-and-place, and single-arm reach) under a unified interface while bundling imitation and reinforcement learning baselines for each task \cite{repoOverview}. The repository foregrounds reproducibility: environment definitions, data collection policies, training harnesses, and evaluation scripts all share the same observation and action conventions, allowing researchers to switch between simulation-first iteration and real-robot deployment with minimal friction.
+
+This report captures the latest state of the sandbox, telling the story of how its components interact. We begin with the environment abstractions that keep dual- and single-arm variants aligned, move on to the robot embodiment layer that mediates between high-level commands and joint-level actuation, and then turn to the demonstration and learning pipelines that populate the sandbox with skill.
+
+\section{Software Architecture}
+At the heart of the sandbox lies a set of Gymnasium-style environments built around a goal-conditioned observation dictionary. A mixin class flattens these dictionaries into arrays for algorithm compatibility while preserving the semantic grouping of observation, achieved goal, and desired goal components \cite{goalMixin}. Simulation services, including PyBullet connection management, camera control, and general utilities such as distance computations, are centralised in a reusable helper module \cite{utilModule}. Figure~\ref{fig:architecture} illustrates the resulting flow of information between layers.
+
+\begin{figure}[!t]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.5cm and 2.0cm,
+        every node/.style={font=\small},
+        layer/.style={
+            rectangle, rounded corners, draw=black, thick,
+            fill=blue!6, align=center,
+            inner sep=3pt,
+            minimum width=5.2cm,   % 原 4.6cm
+            text width=4.9cm,      % 原 4.0cm
+            minimum height=1.1cm
+        },
+        flow/.style={-{Latex[length=3mm]}, very thick}
+    ]
+        % left column: simulation stack
+        \node[layer] (envs) {
+            \begin{tabular}{c}
+                Goal-Conditioned\\
+                Environments\\[2pt]
+                \code{pick_place_env.py}\\[1pt]
+                \code{reach_env.py}
+            \end{tabular}
+        };
+        \node[layer, below=of envs] (robots) {
+            \begin{tabular}{c}
+                Robot Embodiments\\[2pt]
+                \code{ur5_robotiq.py}
+            \end{tabular}
+        };
+        \node[layer, below=of robots] (sim) {
+            \begin{tabular}{c}
+                Simulation Services\\[2pt]
+                \code{utilize.py}
+            \end{tabular}
+        };
+
+        % right column: data and learning stack
+        \node[layer, right=of envs] (demo) {
+            \begin{tabular}{c}
+                Heuristic Demonstrations\\[2pt]
+                \code{get_expert_data_*.py}
+            \end{tabular}
+        };
+        \node[layer, below=of demo] (buffers) {
+            \begin{tabular}{c}
+                Replay Buffers \\[2pt] HER Relabelling\\[2pt]
+                \code{rl_utils.py}\\[1pt]
+                \code{imitation_learning/WGCSL.py}
+            \end{tabular}
+        };
+        \node[layer, below=of buffers] (learning) {
+            \begin{tabular}{c}
+                Learning Pipelines: \\ SAC, WGCSL, GAIL\\[2pt]
+                \code{reinforcement_learning/}\\[1pt]
+                \code{imitation_learning/}
+            \end{tabular}
+        };
+
+        % real robot bridge
+        \node[layer, below=of sim] (real) {
+            \begin{tabular}{c}
+                Real-Robot Bridge\\[2pt]
+                ROS Workspace\\[1pt]
+                \code{Dual_robot_real/}
+            \end{tabular}
+        };
+
+        % arrows within simulation stack
+        \draw[flow] (envs) -- node[left]{observations} (robots);
+        \draw[flow] (robots) -- node[left]{commands} (sim);
+        \draw[flow] (sim) -- node[left]{physics\newline state} (real);
+
+        % arrows across stacks
+        \draw[flow] (envs) -- node[above]{rollouts} (demo);
+        \draw[flow] (demo) -- node[right]{trajectories} (buffers);
+        \draw[flow] (buffers) -- node[right]{batches} (learning);
+        \draw[flow] (learning) |- node[pos=0.38, left]{policies} (envs);
+
+        % connections back to simulation
+        \draw[flow] (learning) |- node[pos=0.2,left]{controllers} (robots);
+        \draw[flow] (real) |- node[pos=0.2,right]{deployment} (learning);
+    \end{tikzpicture}
+    \caption{Information flow in the Dual Robot Manipulation Sandbox. Simulation-facing modules on the left provide goal-conditioned rollouts that feed the demonstration and learning pipelines on the right. Learned policies close the loop by issuing commands back to both simulated and real robot embodiments.}
+    \label{fig:architecture}
+\end{figure}
+
+\section{Goal-Conditioned Task Suite}
+\subsection{Dual-Arm Pick-and-Place}
+The legacy dual-arm task instantiates two UR5 arms equipped with Robotiq 85 grippers and exposes either joint-space or end-effector control. A training episode begins with random sampling of both the initial object pose and the desired goal, subject to a configurable distance threshold that prevents trivial resets \cite{dualEnvReset}. The environment normalises each observation channel relative to its action bounds, composes a goal-conditioned dictionary, and exposes both dense and sparse success metrics through reward and termination logic \cite{dualEnvSpaces, dualEnvStep}.
+
+A key feature is the ability to switch between joint and Cartesian control without modifying downstream code. The environment computes inverse kinematics for each arm when operating in end-effector mode and enforces identical termination and truncation rules regardless of control scheme \cite{dualEnvIK, dualEnvTermination}.
+
+\subsection{Single-Arm UR5e Pick-and-Place}
+The single-arm variant mirrors the dual-arm API while specialising to a UR5e equipped with a Robotiq 140 gripper. Optional toggles disable the gripper during training for policies that rely on externally scripted grasps. The environment samples tabletop goals within a narrow workspace, constructs observation bounds consistent with the embodiment's controllable degrees of freedom, and provides shared reward logic with the dual-arm task to ease cross-transfer \cite{singleEnvInit}. End-effector control clamps motion within a safe vertical range to prevent physically implausible commands during optimisation \cite{singleEnvControl}.
+
+\subsection{UR5e Reach Task}
+The reach task reuses the single-arm embodiment but recasts the goal as the average position of the gripper finger pads. Goals are sampled by perturbing a canonical handle position, with optional visualisation via debug points for qualitative inspection \cite{reachEnvReset}. Observations concatenate historical joint states to capture motion context, and HER-friendly rewards penalise distances above the threshold \cite{reachEnvObservation}.
+
+\section{Robot Embodiments}
+The environment wrappers delegate low-level actuation to dedicated robot classes. The dual-arm wrapper loads a composite URDF, sets up mimic joint constraints for the grippers, and provides helper functions for computing inverse kinematics and constructing observation vectors rich in end-effector pose and velocity information \cite{dualRobotLoad, dualRobotObs}. Gripper actuation is translated into target finger separations through trigonometric mapping from desired opening lengths to joint angles, ensuring symmetric closure \cite{dualRobotGripper}.
+
+The single-arm wrapper follows the same philosophy but emphasises configurability: the tool-centre-point link can be overridden, gripper mimics are generalised through gear constraints, and joint bounds are enforced whenever joint-space control is requested \cite{singleRobotConfig}.
+
+\section{Simulation Services}
+PyBullet clients are instantiated with consistent physics settings, regardless of GUI usage, ensuring reproducible dynamics across headless and interactive runs \cite{utilModule}. Camera utilities provide projective transformations for rendering RGB-D observations or mapping depth pixels back to world coordinates, supporting vision-based extensions without intruding on the core control loops \cite{cameraUtility}.
+
+\section{Demonstration Harvesting}
+Heuristic scripts record expert trajectories by steering the gripper towards the object or goal depending on the state of the manipulation sequence. The dual-arm collector decides which hand should engage based on instantaneous distance and modulates gripper closing schedules to secure the object before lift-off \cite{expertCollector}. Each trajectory is inserted into a replay buffer that supports optional HER relabelling, ensuring compatibility with both imitation and reinforcement learning consumers \cite{trajectoryBuffer}.
+
+\section{Learning Pipelines}
+\subsection{Reinforcement Learning}
+Soft Actor-Critic (SAC) with HER forms the primary reinforcement learning baseline. The training script seeds all stochastic components, constructs goal-augmented state vectors by concatenating observation, desired goal, and achieved goal channels, and alternates between trajectory collection and buffered updates \cite{sacSetup}. Learning rate decay, adaptive entropy targeting, and periodic evaluation checkpoints are built in to support long training schedules. Replay buffers capture full trajectories and perform HER sampling with adjustable ratios before each update \cite{sacHerLoop}.
+
+Utility functions shared across reinforcement learning pipelines provide generic replay buffers, on-policy training loops, and advantage estimators for PPO variants, highlighting the sandbox's emphasis on code reuse \cite{rlUtils}.
+
+\subsection{Imitation Learning}
+Weighted Goal-Conditioned Supervised Learning (WGCSL) serves as the supervised baseline, combining policy and value estimators with HER-augmented sampling and soft target updates \cite{wgcslCore}. Adversarial imitation is implemented via a GAIL harness that couples a PPO policy with a discriminator trained on expert rollouts serialized from the heuristic collector \cite{gailHarness}. The training loop refreshes the discriminator with on-policy data each episode and evaluates checkpoints against held-out goals to monitor policy recovery.
+
+\section{Real-Robot Bridge}
+While simulation remains the primary iteration environment, the repository includes a ROS Noetic catkin workspace for interfacing with a physical dual-UR5 platform, Intel RealSense cameras, and Robotiq grippers. The codebase is therefore positioned to support a sim-to-real workflow, with simulation and learning scripts remaining decoupled from ROS dependencies \cite{realRobot}.
+
+\section{Research Narrative}
+Developing the sandbox meant orchestrating multiple moving parts so that researchers could focus on algorithmic ideas rather than glue code. The journey began with harmonising observation spaces across tasks---a pragmatic decision that later enabled HER to function identically in both imitation and reinforcement learning pipelines. The dual-arm environment, initially a bespoke script, was refactored into a class that shares a mixin with the single-arm tasks, reducing bugs when expanding the observation vector.
+
+Next came the recognition that reproducible demonstrations were essential. The heuristic collector, while simple, embodies years of intuition about how to stage gripper motions and when to commit to a grasp. Its trajectories not only bootstrap imitation learners but also offer dense coverage for HER, effectively transforming sparse rewards into learning signals without manual reward shaping.
+
+Finally, the reinforcement and imitation learning stacks were designed to tell complementary stories: SAC+HER emphasises exploration under sparse rewards, WGCSL showcases the power of reweighting demonstrations, and GAIL closes the loop by adversarially aligning agent and expert behaviour. Together, these pipelines create a virtuous cycle of data collection, policy refinement, and evaluation that can be extended to new tasks with minimal friction.
+
+\section{Conclusion}
+The \texttt{Dual Robot Manipulation Sandbox} delivers a cohesive platform for studying goal-conditioned manipulation across simulation and physical embodiments. By integrating environment design, robot abstraction, heuristic expertise, and learning algorithms, the project offers an extensible foundation for future research. Ongoing work aims to tighten the sim-to-real gap, incorporate vision-based policies through the existing camera utilities, and broaden the task suite to include collaborative manipulation scenarios.
+
+\section*{Acknowledgements}
+The author thanks the PyBullet, Gymnasium, and PyTorch communities for the tooling that made this sandbox feasible, as well as colleagues who provided feedback on the dual-arm platform.
+
+\begin{thebibliography}{9}
+\bibitem{repoOverview} README, ``Dual Robot Manipulation Sandbox,'' commit version accessed October 2024.
+\bibitem{goalMixin} \texttt{pick\_place\_env.py}, lines 10--79.
+\bibitem{utilModule} \texttt{utilize.py}, lines 11--142.
+\bibitem{dualEnvReset} \texttt{pick\_place\_env.py}, lines 109--158.
+\bibitem{dualEnvSpaces} \texttt{pick\_place\_env.py}, lines 45--82.
+\bibitem{dualEnvStep} \texttt{pick\_place\_env.py}, lines 159--205.
+\bibitem{dualEnvIK} \texttt{pick\_place\_env.py}, lines 214--245.
+\bibitem{dualEnvTermination} \texttt{pick\_place\_env.py}, lines 186--198.
+\bibitem{singleEnvInit} \texttt{pick\_place\_env.py}, lines 262--404.
+\bibitem{singleEnvControl} \texttt{pick\_place\_env.py}, lines 324--401.
+\bibitem{reachEnvReset} \texttt{reach\_env.py}, lines 73--121.
+\bibitem{reachEnvObservation} \texttt{reach\_env.py}, lines 124--180.
+\bibitem{dualRobotLoad} \texttt{ur5\_robotiq.py}, lines 7--190.
+\bibitem{dualRobotGripper} \texttt{ur5\_robotiq.py}, lines 88--148.
+\bibitem{dualRobotObs} \texttt{ur5\_robotiq.py}, lines 300--340.
+\bibitem{singleRobotConfig} \texttt{ur5\_robotiq.py}, lines 343--624.
+\bibitem{cameraUtility} \texttt{utilize.py}, lines 88--142.
+\bibitem{expertCollector} \texttt{get\_expert\_data\_pick\_place.py}, lines 44--129.
+\bibitem{trajectoryBuffer} \texttt{imitation\_learning/WGCSL.py}, lines 25--96.
+\bibitem{sacSetup} \texttt{reinforcement\_learning/train\_sac.py}, lines 31--120.
+\bibitem{sacHerLoop} \texttt{reinforcement\_learning/train\_sac.py}, lines 121--199.
+\bibitem{rlUtils} \texttt{rl\_utils.py}, lines 1--90.
+\bibitem{wgcslCore} \texttt{imitation\_learning/WGCSL.py}, lines 99--200.
+\bibitem{gailHarness} \texttt{imitation\_learning/train\_GAIL.py}, lines 1--188.
+\bibitem{realRobot} README, lines 30--133.
+\end{thebibliography}
+
+\end{document}
