@@ -1,6 +1,6 @@
-# Dual Robot Manipulation Sandbox
+# Dual Robot Manipulation Sandbox: A Goal-Conditioned Platform for Imitation and Reinforcement Learning
 
-A goal-conditioned research playground that bridges physics-based simulation, heuristic demonstration harvesting, imitation learning, and reinforcement learning for UR5 manipulators in PyBullet. The accompanying technical report (`Doc/Dual Robot Manipulation Sandbox.pdf`) narrates how the pieces fit together and is now part of the repository.
+A goal-conditioned research playground that bridges physics-based simulation, heuristic demonstration harvesting, imitation learning, and reinforcement learning for UR5 manipulators in PyBullet. The accompanying technical report (`doc/Dual Robot Manipulation Sandbox: A Goal-Conditioned Platform for Imitation and Reinforcement Learning.pdf`) narrates how the pieces fit together and is now part of the repository.
 
 The sandbox currently ships three tasks that share a consistent observation/action API:
 
@@ -19,7 +19,7 @@ On top of these environments you will find heuristic data collection policies, i
 - **Heuristic-to-learning pipeline.** The `get_expert_data_*.py` collectors seed both HER-enabled replay buffers and imitation learning baselines (WGCSL, GAIL), letting you bootstrap policies before turning on RL fine-tuning.
 - **Sim-to-real bridge.** `Dual_robot_real/` retains a ROS Noetic workspace that mirrors the simulated control stack, easing deployment on dual-UR5 hardware once policies are ready.
 
-For deeper architectural context, including the information-flow diagram (Figure&nbsp;1 in the report) and section-by-section design notes, consult `Doc/Dual Robot Manipulation Sandbox.pdf`.
+For deeper architectural context, including the information-flow diagram (Figure&nbsp;1 in the report) and section-by-section design notes, consult `doc/Dual Robot Manipulation Sandbox: A Goal-Conditioned Platform for Imitation and Reinforcement Learning.pdf`.
 
 ---
 
@@ -53,14 +53,14 @@ pip install -r requirements.txt
 | `imitation_learning/` | WGCSL, GAIL, WGAN-GP implementations and training scripts. |
 | `reinforcement_learning/` | PPO, SAC+HER, DDPG+HER agents, training harnesses, and inference utilities. |
 | `Dual_robot_real/` | Catkin workspace for the physical dual-UR5 setup (ROS Noetic). |
-| `Doc/` | Project documentation, including the latest technical report (`Dual Robot Manipulation Sandbox.pdf`). |
+| `doc/` | Project documentation, including the latest technical report (`Dual Robot Manipulation Sandbox: A Goal-Conditioned Platform for Imitation and Reinforcement Learning.pdf`). |
 | `test.py` | CLI utility to instantiate any of the environments for smoke testing. |
 
 ---
 
 ## Technical Report
 
-The report in `Doc/Dual Robot Manipulation Sandbox.pdf` captures:
+The report in `doc/Dual Robot Manipulation Sandbox: A Goal-Conditioned Platform for Imitation and Reinforcement Learning.pdf` captures:
 
 - Environment abstractions that keep dual- and single-arm variants aligned.
 - The robot embodiment layer handling joint- or Cartesian-space control.
@@ -186,11 +186,11 @@ If this repository accelerates your research, please cite it using the entry bel
 
 ```bibtex
 @misc{dualrobot2024,
-  title        = {Dual Robot Manipulation Sandbox},
+  title        = {Dual Robot Manipulation Sandbox: A Goal-Conditioned Platform for Imitation and Reinforcement Learning},
   author       = {Cheng Yin},
-  year         = {2024},
+  year         = {2025},
   publisher    = {GitHub},
-  howpublished = {\url{https://github.com/wadeKeith/Dual_robot}},
+  howpublished = {\url{https://github.com/wadeKeith/Dual-Robot-Manipulation-Sandbox-A-Goal-Conditioned-Platform-for-Imitation-and-Reinforcement-Learning}},
   note         = {PyBullet-based UR5 manipulation environments and learning pipelines}
 }
 ```
