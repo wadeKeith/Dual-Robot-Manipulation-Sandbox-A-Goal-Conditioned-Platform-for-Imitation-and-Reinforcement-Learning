@@ -28,22 +28,26 @@ The code is organized so you can generate demonstrations, train policies, evalua
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.8+ (tested on 3.8–3.10)
 - [PyBullet](https://pybullet.org/wordpress/)
 - [Gymnasium](https://gymnasium.farama.org/) (for `spaces.Box` utilities)
-- PyTorch (tested with CUDA and MPS backends)
+- PyTorch (CUDA or MPS builds recommended if available)
 - NumPy, tqdm, matplotlib
+- Optional: Hydra, termcolor (for DP3 evaluation utilities), OpenCV, Pillow, torchvision (real-robot vision stack)
+- Optional (real hardware): ROS Noetic, `ur_robot_driver`, `robotiq_2f_gripper_control`, `realsense2_camera`
 
 ### Environment Setup
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install --upgrade pip
 pip install pybullet gymnasium numpy torch tqdm matplotlib
+# optional extras used by scripts
+pip install opencv-python pillow torchvision hydra-core termcolor dill
 ```
 
-> **Tip:** If you plan to render the PyBullet GUI, use a local Python environment rather than headless servers.
+> **Tip:** When running on headless servers, disable the GUI (`sim_params['use_gui']=False`) and ensure EGL/OSMesa rendering is available if you need off-screen camera capture.
 
 ### Quick Test
 
@@ -54,6 +58,16 @@ python test.py
 ```
 
 Close the window or interrupt the script to terminate.
+
+### Simulation Configuration & Customization
+
+- The pick-and-place environment is parameterized via three dictionaries seen across scripts:
+  - `sim_params`: physics timestep (default `1/240`), GUI flag, control mode (`'end'` vs `'joint'`), training mode (controls stochastic goal sampling), and success distance threshold.
+  - `robot_params`: 12-element joint reset pose (left + right arm) and gripper opening range.
+  - `visual_sensor_params`: virtual camera FOV, pose, image size, and near/far planes—used by `utilize.Camera` if you enable RGB-D capture.
+- Override these dictionaries before instantiating `PickPlace_UR5Env` to tailor workspace bounds, step horizons, or control schemes.
+- For deterministic evaluation runs, set `sim_params['is_train']=False` to use fixed start/goal poses and disable random goal resampling.
+- Logs and saved models default to the repository root. You can redirect artifacts by exporting `MODEL_DIR=/path/to/save` (scripts honor this environment variable when present).
 
 ## Core Components
 
@@ -88,8 +102,9 @@ python get_expert_data_pick_place.py
 ```
 
 - Launches the environment (GUI on by default) and executes a heuristic policy that actively guides the “closer” gripper to the block, closes, then lifts and moves toward the sampled goal.
-- Successful trajectories are appended to a `ReplayBuffer_Trajectory` and saved as `dual_robot_pickplace_<N>_expert_data_WGCSL.pkl`.
-- Adjust `sim_params` or the heuristic in the script if you need different behavior or dataset sizes.
+- Successful trajectories accumulate in a `ReplayBuffer_Trajectory` and, once the quota is met (`expert_data_num`, default 40 000 episodes), the buffer is serialized to `dual_robot_pickplace_<N>_expert_data_WGCSL.pkl`.
+- If you want a smaller pilot dataset, reduce `expert_data_num` and increase `acc_factor` thresholds; for harder randomizations you can adjust the workspace bounds inside `_sample_goal` and `_sample_achieved_goal_initial`.
+- Set `sim_params['use_gui']=False` for faster headless collection—progress will still stream to stdout.
 
 ### 2. Train via WGCSL (Weighted Goal-Conditioned Supervised Learning)
 
@@ -97,9 +112,13 @@ python get_expert_data_pick_place.py
 python imitation_learning/tain_WGCSL.py
 ```
 
-- Loads expert trajectories (if `use_expert_data` is `True`) and augments them with HER.
-- Optimizes a stochastic policy network alongside value/Q estimators; checkpoints are written to `model/wgcsl_her_dual_robot_pick_{actor,critic}_<epoch>.pkl`.
-- After each epoch, the script switches to evaluation mode (`is_train = False`) for a success-rate sanity check.
+- Loads expert trajectories (if `use_expert_data=True`) and augments them with HER. When `use_expert_data=False`, the buffer is filled online using freshly collected rollouts.
+- Core CLI toggles:
+  - `use_expert_data`: switch between offline demonstration training vs. online collection.
+  - `load_agent`: resume from stored actor/critic weights.
+  - `sim_params['use_gui']`: enable/disable renderer during training and evaluation.
+- Checkpoints are written to `model/wgcsl_her_dual_robot_pick_{actor,critic}_<iter>.pkl`. Set `MODEL_DIR` to change the target directory.
+- After each iteration, the script constructs a non-randomized test environment (`sim_params['is_train']=False`) to report success rate, percentile statistics, and HER buffer occupancy.
 
 ### 3. Adversarial Imitation (GAIL / WGAN-GP)
 
@@ -109,10 +128,13 @@ python imitation_learning/train_GAIL.py
 python imitation_learning/train_WGAN.py
 ```
 
-- Both scripts boot a PPO policy, sample agent rollouts, and use expert trajectories to supervise a discriminator.
-- Discriminator outputs become learned rewards fed back into PPO updates.
-- Checkpoints are saved under `model/gail_dual_robot_pick_*.pkl` and `model/wgan_dual_robot_pick_*.pkl`.
-- `train_WGAN.py` uses gradient penalty (`c_lambda`) and RMSProp optimizers to stabilize Wasserstein training.
+- Both scripts bootstrap a PPO actor/critic, sample agent rollouts, and use expert trajectories to supervise a discriminator (binary cross-entropy for GAIL, Wasserstein distance with gradient penalty for WGAN-GP).
+- Key script flags:
+  - `sim_params['use_gui']`: turn on visual monitoring during evaluation sweeps.
+  - `her_buffer.batch_size`: dynamically overridden to match episode length; you can clamp it to stabilize critic updates.
+  - `agent_num`: load a pre-trained WGCSL initialization before adversarial updates.
+- Discriminator outputs become dense rewards fed back into PPO. Training logs include discriminator loss, synthetic reward magnitude, and success counters for quick diagnostics.
+- Checkpoints are saved under `model/gail_dual_robot_pick_{actor,critic}_<iter>.pkl` and `model/wgan_dual_robot_pick_{actor,critic}_<iter>.pkl`; both scripts also run periodic evaluation rollouts for sanity checks.
 
 ### 4. Reinforcement Learning Fine-Tuning (PPO)
 
@@ -120,9 +142,10 @@ python imitation_learning/train_WGAN.py
 python reinforcement_learning/train_ppo.py
 ```
 
-- Initializes PPO and optionally seeds it with a pre-trained WGCSL actor/critic.
-- Collects trajectories directly from the environment, applies a HER-style goal relabeling (`ppo.her_process`), and performs clipped-surface PPO updates.
-- Models are stored under `model/ppo_dual_robot_pick_actor_<epoch>.pkl`.
+- Initializes PPO and optionally seeds it with a pre-trained WGCSL actor/critic (`agent.actor.load_state_dict(...)` / `agent.critic.load_state_dict(...)` at the top of the script).
+- Collects trajectories directly from the environment, applies a HER-style goal relabeling (`ppo.her_process`), and performs clipped-surface PPO updates with entropy regularization.
+- CLI knobs include entropy coefficient (`entropy_coef`), clipping range (`eps`), and number of epochs per iteration. Adjust these to trade-off stability vs. exploration.
+- Actor checkpoints are stored under `model/ppo_dual_robot_pick_actor_<iter>.pkl`; critics can be snapshotted by extending the script with `torch.save(agent.critic.state_dict(), ...)`.
 
 ### 5. Evaluate / Visualize Policies
 
@@ -133,17 +156,28 @@ python imitation_learning/inference_wgcsl.py
 - Example script that loads a specific WGCSL checkpoint and rolls it out (GUI enabled).
 - You can adapt it for other algorithms by swapping the model class and checkpoint path.
 
+## Artifacts & Logging
+
+- **Model directory:** defaults to `./model`. Override via `MODEL_DIR` env var.
+- **Expert buffers:** serialized to the working directory (e.g., `dual_robot_pickplace_40000_expert_data_WGCSL.pkl`). Ensure adequate disk space (~3–4 GB for 40k trajectories).
+- **Progress bars:** all training scripts use `tqdm`; disable by setting `TQDM_DISABLE=1`.
+- **Matplotlib plots:** WGCSL/GAIL/WGAN scripts generate learning curves at the end of execution. Uncomment `plt.show()` sections or replace with `plt.savefig(...)` to collect figures during headless runs.
+- **Debug frames:** enable `sim_params['use_gui']=True` to manually inspect contact issues; combine with `utilize.Camera` for custom RGB-D recordings.
+
 ## Real-World Workspace (`Dual_robot_real/`)
 
 The `Dual_robot_real` directory is a Catkin workspace geared toward deploying the dual-arm setup on actual UR5e manipulators with Robotiq 2F grippers and Intel RealSense cameras.
 
 ### Package Overview
 
-- `dual_description/`, `dual_gazebo/`: URDF/xacro models, MoveIt descriptions, and Gazebo resources mirroring the physical workstation.
-- `dual_ur5e_driver/`, `ur_robot_driver/`: ROS control and hardware interfaces for left/right UR5e arms (mirrors Universal Robotics' official driver layout).
-- `robotiq_driver/`: ROS wrappers for commanding the Robotiq 85 grippers via the Modbus bridge.
-- `visual_realsense/`: Launch files and calibration assets for top/right RealSense RGB-D sensors.
-- `real_robot/`: Core research package containing Python scripts for data collection, policy execution, and door-opening experiments.
+- `dual_description/`, `dual_gazebo/`: URDF/xacro models, MoveIt descriptions, and Gazebo resources mirroring the physical workstation. Use these to validate collision geometry or simulate dual-arm trajectories before touching hardware.
+- `dual_robot_rl/`: ROS interfaces and messages for streaming multi-step action commands; consumed by `RealDoorRunner` and other reinforcement-learning nodes.
+- `dual_ur5e_driver/`, `ur_robot_driver/`: ROS control stacks for left/right UR5e arms (mirroring Universal Robots’ official driver layout) plus helper launch files that namespace each arm under `/left/` and `/right/`.
+- `robotiq_driver/`: Nodes that expose Modbus control of the Robotiq 85 grippers and publish state feedback (`Robotiq2FGripperRobotInput`).
+- `visual_realsense/`: Launch files, calibration YAMLs, and tf publishers for the top-mounted and right-mounted Intel RealSense cameras.
+- `real_robot/`: Core research package containing Python scripts for data collection, policy execution, door-opening experiments, and vision logging.
+- `move_demo/`: Example launch files and scripts for scripted joint-space trajectories—handy for sanity checks during bringup.
+- `lib/`: Vendored third-party libraries (e.g., TRAC-IK bindings) compiled as part of the Catkin workspace.
 
 ### Building and Launching
 
@@ -154,6 +188,15 @@ source devel/setup.bash  # or setup.zsh
 ```
 
 > **Hardware prerequisites:** Ubuntu 20.04 + ROS Noetic, two UR5e arms reachable via Ethernet, Robotiq 2F grippers, and calibrated RealSense D435 cameras publishing on `/top_camera/*` and `/right_camera/*`. Ensure the UR control boxes expose the standard dashboard services (power, brake release, play/stop).
+
+Recommended bring-up checklist:
+
+1. Assign static IPs to each UR controller and confirm dashboard services respond:
+   `rosservice call /right/ur_hardware_interface/dashboard/power_on`.
+2. Launch the Robotiq driver and verify `Robotiq2FGripperRobotInput` publishes changing values while jogging the gripper from the teach pendant.
+3. Start the RealSense launch files in `visual_realsense` and visualize `/top_camera/color/image_raw` and `/right_camera/aligned_depth_to_color/image_raw` in RViz; adjust exposure or ROI if needed.
+4. Run `rosrun real_robot camera_test.py` to confirm the `Camera` wrapper can access both RGB and depth streams from ROS.
+5. Initialize each arm using `rosrun real_robot real_robot.py` or `real_robot_right.py`, ensuring the joints move to the default `right_init_q`/`left_init_q` without collisions.
 
 ### real\_robot Package Highlights
 
@@ -170,12 +213,20 @@ source devel/setup.bash  # or setup.zsh
 ### Typical Real-Robot Workflow
 
 1. **Bringup:** Launch UR drivers, gripper nodes, and RealSense streams (see package-specific launch files).
-2. **Calibrate/Reset:** Use `real_robot.py` or `real_robot_right.py` to send the arms to safe default joint positions and verify camera feeds.
-3. **Demonstrations:** Execute `gen_demo.py` (or variants) to roll out PID-guided trajectories, log observations/actions, and optionally record RGB videos.
-4. **Policy Evaluation:** Install the `policy` package (`pip install -e scripts`) and run `rosrun real_robot eval.py` (Hydra config + checkpoint path configurable) to deploy the DP3 policy through `RealDoorRunner`.
-5. **Data Export:** Scripts such as `vision_data_collection.py` capture raw RGB-D sequences for offline annotation or dataset curation.
+2. **Calibrate/Reset:** Use `real_robot.py` or `real_robot_right.py` to send the arms to safe default joint positions and verify camera feeds; tune `workspace_low/high` if your table layout differs.
+3. **Safety Sweep:** Jog small deltas through `Robot_right.step` and confirm the PID gains respect joint velocity limits. Reduce `action_factor` if motion is jerky.
+4. **Demonstrations:** Execute `gen_demo.py` (or `gen_demo1.py`) to follow PID-guided waypoints (`data_demo/*.py`), logging observation/action sequences and optionally recording RGB videos with `gen_video.py`.
+5. **Policy Evaluation:** Install the `policy` package (`pip install -e scripts`) and run `rosrun real_robot eval.py` (Hydra config + checkpoint path configurable) to deploy the DP3 policy through `RealDoorRunner`. `MultiStepWrapper` handles frame stacking and automatically stops dashboard services once an episode terminates.
+6. **Data Export:** Use `vision_data_collection.py` or `obs_gen_action.py` to capture raw RGB-D clips or convert saved observations into executable action scripts.
 
-> **Note:** The policy code referenced by `eval.py` (`policy.dp3`, Hydra configs) is not bundled in this repository. Clone or vendor the required modules before running the real-robot evaluation script.
+Troubleshooting tips:
+
+- No IK solution: confirm `<namespace>/robot_description` publishes the URDF with the correct tool flange; TRAC-IK can fail if the camera or gripper meshes are missing.
+- Speed limit warnings: reduce `arm_action_factor` or increase `action_delta_t` in `real_robot_right.py` to respect UR5 joint velocity limits.
+- Depth images are 8-bit by default; convert to metric depth before feeding them to learning pipelines if required.
+- Dashboard calls can hang if the controller is already playing. Issue `/.../stop` before `/.../play`.
+
+> **Note:** The policy code referenced by `eval.py` (`policy.dp3`, Hydra configs) is not bundled in this repository. Clone or vendor the required modules before running the real-robot evaluation script. The `setup.py` in `scripts/` expects a `policy/` Python package when installing in editable mode.
 
 ## Configuration Reference
 
@@ -193,6 +244,8 @@ Feel free to tailor these dictionaries within each script or refactor them into 
 - **Custom rewards or tasks:** extend `PickPlace_UR5Env` to add shaped rewards, different goal sampling, or multi-object manipulation.
 - **New algorithms:** re-use the environment and replay buffers to prototype alternative RL/IL methods; both Gymnasium-style observations and normalized variants (`dictobs2npobs`) are available.
 - **Rendering / cameras:** instantiate `utilize.Camera` for custom viewpoints or depth processing pipelines.
+- **Sim-to-real transfer:** export the normalized observation vector alongside raw state dictionaries so you can plug the same policy into `Robot_right` with minimal feature engineering. Align workspace bounds and action scaling between `PickPlace_UR5Env` and `real_robot_right.py` to reduce distributional shift.
+- **Batch experiments:** wrap training scripts with shell loops (or Hydra) to sweep seeds, control modes, or reward thresholds. All hyperparameters are regular Python literals at the top of each script for easy templating.
 
 ## License
 
