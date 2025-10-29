@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node name="ur5e_dual_arm_base" pkg="gazebo_ros" type="spawn_model"
+    args="-file $(find move_demo)/models/ur5e_dual_arm_base/model.sdf -sdf -model ur5e_dual_arm_base -x 0.0 -y -0.0" />
+  
+</launch>

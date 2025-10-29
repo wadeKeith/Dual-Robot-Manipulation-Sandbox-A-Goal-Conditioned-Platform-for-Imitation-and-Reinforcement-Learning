@@ -1,0 +1,14 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/media/jt/Extreme SSD/Github/Dual_robot_real/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ],
+    "cmake.sourceDirectory": "/media/zxr/Extreme SSD/Github/Dual_robot_real/src",
+    "python.analysis.extraPaths": [
+        "/media/jt/Extreme SSD/Github/Dual_robot_real/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages",
+        "./src/real_robot/scripts",
+        "./src/real_robot/scripts/policy",
+        "/media/jt/Extreme SSD/Github/Dual_robot_real/src/visual_realsense/scripts/D435i"
+    ],
+}

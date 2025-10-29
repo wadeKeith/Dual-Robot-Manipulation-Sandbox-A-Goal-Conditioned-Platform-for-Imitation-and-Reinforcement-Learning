@@ -1,0 +1,29 @@
+dual_gym: #namespace
+    # General Agent parameters
+    driver: "robot"
+    reset_robot: False
+    ft_sensor: False
+    agent_control_dt: 0.1
+    reset_time: 3
+    rand_seed: 3407  
+
+
+    # for each dimension define upper and lower bound from initial pose
+    # workspace: [[-0.18, -0.08], [0.33, 0.42], [0.15, 0.25], [-0.05, 0.05], [1.0, 1.5], [0.0, 3.15]]
+    left_init_q: [0, -2.355, -0.785, -1.57, -2.355, 0]
+    # left_init_q: [0, -2.54, 0, -2.2, -2.35, 0.00]
+    right_init_q: [0, -0.785, 0.785, -1.57, 2.355, 0]
+
+
+    goal_b: [-0.19,  0.55,  0.45]
+
+    # actions parameters 
+    n_actions: 6
+  
+    # Reward parameters
+    # tgt_pose_indices: [0, 1, 2, 3, 4, 5]
+    distance_threshold: 0.01
+    reward_type: "dense"
+
+    rl:
+        steps_per_episode: 2000

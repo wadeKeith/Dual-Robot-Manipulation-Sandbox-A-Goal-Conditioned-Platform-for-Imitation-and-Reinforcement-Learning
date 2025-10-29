@@ -1,0 +1,8 @@
+prefix=/media/jt/Extreme SSD/Github/Dual_robot_real/devel
+
+Name: real_robot
+Description: Description of real_robot
+Version: 1.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: rospy

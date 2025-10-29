@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- <arg name="robot_name"/> -->
+
+  <!-- <arg name="limited" default="false"/> -->
+  <arg name="paused" default="false"/>
+  <arg name="gui" default="true"/>
+  <arg name="debug" default="false" />
+  <!-- <arg name="sim" default="true" /> -->
+
+  <!-- startup simulated world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <!-- <arg name="world_name" default="worlds/empty.world"/> -->
+    <arg name="world_name" default="$(find dual_gazebo)/worlds/sim.world"/>
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)"/>
+  </include>
+
+  
+  <!-- body -->
+  <group ns="body">
+      <include file="$(find dual_gazebo)/launch/inc/body.launch">
+        <arg name="robot_name" value="body"/>
+      </include>
+  </group>
+  <node pkg="dual_gazebo" type="fixed_tf_broadcaster_body.py" name="broadcaster_fixed_body" />
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find dual_gazebo)/config/view_rviz.rviz" required="false" /> -->
+</launch>
+
+

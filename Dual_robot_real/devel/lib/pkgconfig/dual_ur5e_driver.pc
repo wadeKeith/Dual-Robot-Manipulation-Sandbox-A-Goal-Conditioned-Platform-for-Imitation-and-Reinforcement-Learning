@@ -1,0 +1,8 @@
+prefix=/media/jt/Extreme SSD/Github/Dual_robot_real/devel
+
+Name: dual_ur5e_driver
+Description: Description of dual_ur5e_driver
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

@@ -1,0 +1,8 @@
+prefix=/media/jt/Extreme SSD/Github/Dual_robot_real/install
+
+Name: dual_description
+Description: Description of dual_description
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

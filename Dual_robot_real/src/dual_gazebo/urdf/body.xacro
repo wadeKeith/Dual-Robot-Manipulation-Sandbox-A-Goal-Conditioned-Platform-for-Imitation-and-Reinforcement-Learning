@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="body">
+  <link name="world"/>
+
+
+  <!-- add desk  -->
+  <xacro:include filename="$(find dual_description)/urdf/inc/desk_urdf.xacro"/>
+  <xacro:desk_urdf
+      parent_link="world"
+  />
+
+  <!-- add body  -->
+  <xacro:include filename="$(find dual_description)/urdf/inc/body_urdf.xacro"/>
+  <xacro:body_urdf
+      parent_link="desk_mount_link"
+      top_p="0.25"
+      top_camera_p="0.65"
+  />
+
+
+  
+  <!-- add case -->
+  <xacro:include filename="$(find dual_description)/urdf/inc/body_case_urdf.xacro"/>
+  <xacro:body_case_urdf
+      parent_link="desk_mount_link"/>
+
+  <!-- add camera -->
+  <!-- <xacro:arg name="realsense_enabled" default="true"/>
+  <xacro:property name="realsense_enabled" value="$(arg realsense_enabled)"/>
+  <xacro:if value="${realsense_enabled}">
+    <xacro:include filename="$(find realsense_ros_gazebo)/xacro/depthcam.xacro" />
+  </xacro:if> -->
+  
+  
+  <!-- TOP camera -->
+  <!-- <xacro:if value="$(arg realsense_enabled)">
+    <xacro:realsense_d435 sensor_name="d435" parent_link="top_camera_virtual_link" rate="10">
+      <origin xyz="0.007 0 -0.012" rpy="0 0.16 0"/>
+    </xacro:realsense_d435>
+  </xacro:if> -->
+
+  
+  
+
+  <!-- TOP mid360 -->
+  <!-- <xacro:arg name="mid360_enable" default="true"/>
+  <xacro:if value="$(arg mid360_enable)">
+    <xacro:include filename="$(find livox_laser_simulation)/urdf/livox_mid360_imu.xacro"/>
+
+    <xacro:mid360_imu />
+    virtual joint
+    <joint name="top_mid_joint" type="fixed" >
+      <parent link="top_mid_virtual_link" />
+      <child link="livox_base" />
+      <origin xyz="0 0 0.0" rpy="1.57 1.57 3.14" />
+    </joint>
+  </xacro:if> -->
+
+
+
+</robot>
