@@ -1,12 +1,25 @@
 # Dual Robot Manipulation Sandbox
 
-A research playground for learning-based manipulation with UR5 manipulators in PyBullet. The repo now ships three goal-conditioned tasks that share a consistent observation/action API:
+A goal-conditioned research playground that bridges physics-based simulation, heuristic demonstration harvesting, imitation learning, and reinforcement learning for UR5 manipulators in PyBullet. The accompanying technical report (`Doc/Dual Robot Manipulation Sandbox.pdf`) narrates how the pieces fit together and is now part of the repository.
+
+The sandbox currently ships three tasks that share a consistent observation/action API:
 
 - **Dual-arm pick-and-place** – legacy task with two UR5 arms and Robotiq 85 grippers (`PickPlace_UR5Env`).
 - **Single-arm UR5e pick-and-place** – lighter-weight task that mirrors the dual-arm goal structure (`PickPlaceUR5eEnv`).
 - **Single-arm UR5e reach** – reaching the handle with sparse reward shaped for HER (`ReachUR5Env`).
 
 On top of these environments you will find heuristic data collection policies, imitation-learning pipelines (WGCSL, GAIL, WGAN-GP), and several RL baselines (PPO, SAC+HER, DDPG+HER). The code is organised so that demonstrations, training runs, evaluation scripts, and real-robot deployments can reuse the same environment definitions.
+
+---
+
+## Highlights from the Technical Report
+
+- **Unified goal dictionary.** All environments emit `{"observation", "achieved_goal", "desired_goal"}` dictionaries; a mixin flattens them for algorithms that expect arrays while preserving semantic grouping.
+- **Shared simulation services.** `utilize.py` centralises PyBullet connections, camera utilities, and distance helpers so that environment and data-collection scripts stay lightweight.
+- **Heuristic-to-learning pipeline.** The `get_expert_data_*.py` collectors seed both HER-enabled replay buffers and imitation learning baselines (WGCSL, GAIL), letting you bootstrap policies before turning on RL fine-tuning.
+- **Sim-to-real bridge.** `Dual_robot_real/` retains a ROS Noetic workspace that mirrors the simulated control stack, easing deployment on dual-UR5 hardware once policies are ready.
+
+For deeper architectural context, including the information-flow diagram (Figure&nbsp;1 in the report) and section-by-section design notes, consult `Doc/Dual Robot Manipulation Sandbox.pdf`.
 
 ---
 
@@ -40,7 +53,22 @@ pip install -r requirements.txt
 | `imitation_learning/` | WGCSL, GAIL, WGAN-GP implementations and training scripts. |
 | `reinforcement_learning/` | PPO, SAC+HER, DDPG+HER agents, training harnesses, and inference utilities. |
 | `Dual_robot_real/` | Catkin workspace for the physical dual-UR5 setup (ROS Noetic). |
+| `Doc/` | Project documentation, including the latest technical report (`Dual Robot Manipulation Sandbox.pdf`). |
 | `test.py` | CLI utility to instantiate any of the environments for smoke testing. |
+
+---
+
+## Technical Report
+
+The report in `Doc/Dual Robot Manipulation Sandbox.pdf` captures:
+
+- Environment abstractions that keep dual- and single-arm variants aligned.
+- The robot embodiment layer handling joint- or Cartesian-space control.
+- Demonstration collection workflows and how HER, WGCSL, and GAIL reuse the data.
+- Reinforcement learning harnesses (SAC+HER focus) and their replay-buffer design.
+- The ROS-based bridge for deploying trained policies to physical UR5 pairs.
+
+It is the authoritative reference for architecture decisions and is a good starting point if you plan to extend the sandbox.
 
 ---
 
@@ -105,6 +133,8 @@ python imitation_learning/train_WGAN.py
 ```
 
 Set `use_expert_data` toggles inside the scripts to switch between offline demonstration training and online data collection. All scripts share the goal-conditioned observation format emitted by the environments.
+
+> **Workflow tip:** A common recipe, detailed in the report, is to (1) collect heuristic rollouts, (2) train WGCSL or GAIL for rapid policy recovery, and (3) fine-tune with SAC+HER while continuing to reuse the HER-augmented buffer.
 
 ---
 
