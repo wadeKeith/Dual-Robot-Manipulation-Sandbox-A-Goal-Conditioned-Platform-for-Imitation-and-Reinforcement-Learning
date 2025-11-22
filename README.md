@@ -189,8 +189,7 @@ If this repository accelerates your research, please cite it using the entry bel
   title        = {Dual Robot Manipulation Sandbox: A Goal-Conditioned Platform for Imitation and Reinforcement Learning},
   author       = {Cheng Yin},
   year         = {2025},
-  publisher    = {GitHub},
-  howpublished = {\url{https://github.com/wadeKeith/Dual-Robot-Manipulation-Sandbox-A-Goal-Conditioned-Platform-for-Imitation-and-Reinforcement-Learning}},
+  howpublished = {\url{https://github.com/wadeKeith/Dual-Robot-Manipulation-Sandbox}},
   note         = {PyBullet-based UR5 manipulation environments and learning pipelines}
 }
 ```
